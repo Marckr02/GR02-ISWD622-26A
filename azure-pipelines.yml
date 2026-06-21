@@ -49,9 +49,15 @@ stages:
         Contents: '*.war'
         TargetFolder: $(Build.ArtifactStagingDirectory)
 
-    - bash: 
+    - bash: |
+        echo "=== Verificando WAR en target ==="
+        ls -lh $(System.DefaultWorkingDirectory)/target/*.war 2>/dev/null || echo "No WAR found"
+        echo ""
+        echo "=== Verificando contenido del staging ==="
         ls -lh $(Build.ArtifactStagingDirectory)/
-        du -sh $(Build.ArtifactStagingDirectory)/*
+        echo ""
+        echo "=== Tamaño del archivo WAR ==="
+        stat -c%s "$(Build.ArtifactStagingDirectory)/"*.war 2>/dev/null || echo "No WAR file"
       displayName: 'Verify WAR file size'
 
     - task: PublishPipelineArtifact@1
