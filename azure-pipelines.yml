@@ -49,8 +49,11 @@ stages:
         Contents: '*.war'
         TargetFolder: $(Build.ArtifactStagingDirectory)
 
-    - upload: $(Build.ArtifactStagingDirectory)
-      artifact: drop
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish Artifact: drop'
+      inputs:
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: drop
 
 - stage: Deploy
   displayName: Deploy stage
