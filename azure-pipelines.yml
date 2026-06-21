@@ -50,15 +50,12 @@ stages:
         TargetFolder: $(Build.ArtifactStagingDirectory)
 
     - bash: |
-        echo "=== Verificando WAR en target ==="
-        ls -lh $(System.DefaultWorkingDirectory)/target/*.war 2>/dev/null || echo "No WAR found"
+        echo "=== Contenido del WAR ==="
+        unzip -l $(System.DefaultWorkingDirectory)/target/GR02-ISWD622-26A.war
         echo ""
-        echo "=== Verificando contenido del staging ==="
-        ls -lh $(Build.ArtifactStagingDirectory)/
-        echo ""
-        echo "=== Tamaño del archivo WAR ==="
-        stat -c%s "$(Build.ArtifactStagingDirectory)/"*.war 2>/dev/null || echo "No WAR file"
-      displayName: 'Verify WAR file size'
+        echo "=== Tamaño total del WAR ==="
+        du -h $(System.DefaultWorkingDirectory)/target/GR02-ISWD622-26A.war
+      displayName: 'Verify WAR contents'
 
     - task: PublishPipelineArtifact@1
       displayName: 'Publish Artifact: drop'
