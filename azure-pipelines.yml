@@ -49,6 +49,11 @@ stages:
         Contents: '*.war'
         TargetFolder: $(Build.ArtifactStagingDirectory)
 
+    - bash: 
+        ls -lh $(Build.ArtifactStagingDirectory)/
+        du -sh $(Build.ArtifactStagingDirectory)/*
+      displayName: 'Verify WAR file size'
+
     - task: PublishPipelineArtifact@1
       displayName: 'Publish Artifact: drop'
       inputs:
