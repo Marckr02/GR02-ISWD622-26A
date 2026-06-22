@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
+
+    <!-- La persistencia del producto se simula con estructuras en memoria.
+         Esta unidad se declara unicamente para respetar la estructura del proyecto;
+         ningun DAO crea un EntityManager, por lo que no requiere base de datos fisica. -->
+    <persistence-unit name="darkkitchenPU" transaction-type="RESOURCE_LOCAL">
+        <properties/>
+    </persistence-unit>
+</persistence>
