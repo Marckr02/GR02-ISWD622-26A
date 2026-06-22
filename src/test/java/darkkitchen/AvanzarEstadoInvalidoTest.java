@@ -10,17 +10,17 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import service.PedidoService;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.never;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * TDD: avanzarEstado() sobre un pedido ENTREGADO (estado terminal)
- * debe lanzar excepcion y no persistir ningun cambio.
+ * TDD: avanzarEstado() con una transicion valida
+ * (RECIBIDO -> EN_PREPARACION) debe mover el pedido un paso en el flujo.
  */
 @ExtendWith(MockitoExtension.class)
-class AvanzarEstadoInvalidoTest {
+class AvanzarEstadoValidoTest {
 
     @Mock
     private PedidoDao pedidoDao;
@@ -29,12 +29,13 @@ class AvanzarEstadoInvalidoTest {
     private PedidoService pedidoService;
 
     @Test
-    void entregadoNoPuedeAvanzar() {
-        Pedido pedido = new Pedido(9, "Tacos al pastor - El Fogon", "El Fogon", EstadoPedido.ENTREGADO);
-        when(pedidoDao.buscarPorId(9)).thenReturn(pedido);
+    void avanzaDeRecibidoAEnPreparacion() {
+        Pedido pedido = new Pedido(1, "Pizza margarita - Napoli", "Napoli", EstadoPedido.RECIBIDO);
+        when(pedidoDao.buscarPorId(1)).thenReturn(pedido);
 
-        assertThrows(IllegalStateException.class, () -> pedidoService.avanzarEstado(9));
+        Pedido resultado = pedidoService.avanzarEstado(1);
 
-        verify(pedidoDao, never()).actualizar(pedido);
+        assertEquals(EstadoPedido.EN_PREPARACION, resultado.getEstado());
+        verify(pedidoDao, times(1)).actualizar(pedido);
     }
 }
