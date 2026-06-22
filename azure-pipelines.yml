@@ -77,4 +77,4 @@ stages:
               azureSubscription: $(azureSubscription)
               appType: webAppLinux
               appName: $(webAppName)
-              package: '$(Pipeline.Workspace)/drop/ROOT.war'
+              package: '$(Pipeline.Workspace)/drop/**/*.war'
