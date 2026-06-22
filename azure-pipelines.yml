@@ -48,8 +48,12 @@ stages:
         SourceFolder: '$(System.DefaultWorkingDirectory)/target'
         Contents: '*.war'
         TargetFolder: $(Build.ArtifactStagingDirectory)
-        RenameFiles: true
-        renamingPattern: 'ROOT'
+
+    - bash: |
+        cd $(Build.ArtifactStagingDirectory)
+        mv GR02-ISWD622-26A.war ROOT.war 2>/dev/null || mv *.war ROOT.war
+        ls -lh
+      displayName: 'Rename WAR to ROOT'
 
     - task: PublishPipelineArtifact@1
       displayName: 'Publish Artifact: drop'
