@@ -48,14 +48,8 @@ stages:
         SourceFolder: '$(System.DefaultWorkingDirectory)/target'
         Contents: '*.war'
         TargetFolder: $(Build.ArtifactStagingDirectory)
-
-    - bash: |
-        echo "=== Contenido del WAR ==="
-        unzip -l $(System.DefaultWorkingDirectory)/target/GR02-ISWD622-26A.war
-        echo ""
-        echo "=== Tamaño total del WAR ==="
-        du -h $(System.DefaultWorkingDirectory)/target/GR02-ISWD622-26A.war
-      displayName: 'Verify WAR contents'
+        RenameFiles: true
+        renamingPattern: 'ROOT'
 
     - task: PublishPipelineArtifact@1
       displayName: 'Publish Artifact: drop'
@@ -83,4 +77,4 @@ stages:
               azureSubscription: $(azureSubscription)
               appType: webAppLinux
               appName: $(webAppName)
-              package: '$(Pipeline.Workspace)/drop/*.war'
+              package: '$(Pipeline.Workspace)/drop/ROOT.war'
