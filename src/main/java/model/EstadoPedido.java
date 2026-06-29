@@ -43,24 +43,4 @@ public enum EstadoPedido {
                         "El pedido ya fue entregado y no admite mas avances");
         }
     }
-
-    /**
-     * Devuelve el estado anterior para corregir un avance erroneo (HU20).
-     * @throws IllegalStateException si esta en RECIBIDO (estado inicial, sin
-     *         anterior) o en ENTREGADO (un pedido entregado no retrocede).
-     */
-    public EstadoPedido anterior() {
-        switch (this) {
-            case EN_PREPARACION:
-                return RECIBIDO;
-            case LISTO:
-                return EN_PREPARACION;
-            case ENTREGADO:
-                throw new IllegalStateException(
-                        "Un pedido entregado no puede retroceder");
-            default:
-                throw new IllegalStateException(
-                        "El pedido esta en el estado inicial y no tiene estado anterior");
-        }
-    }
 }

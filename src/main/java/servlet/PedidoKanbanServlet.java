@@ -13,8 +13,8 @@ import java.io.IOException;
 
 /**
  * Controlador del tablero Kanban. En GET arma las columnas por estado y
- * reenvia a la vista; en POST procesa las acciones "mover" (avanzar) y
- * "retroceder" (HU20) invocando al PedidoService.
+ * reenvia a la vista; en POST procesa la accion "mover" invocando
+ * PedidoService.avanzarEstado(pedidoId).
  */
 @WebServlet("/pedidos")
 public class PedidoKanbanServlet extends HttpServlet {
@@ -36,17 +36,15 @@ public class PedidoKanbanServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         String accion = request.getParameter("accion");
-        try {
-            int pedidoId = Integer.parseInt(request.getParameter("pedidoId"));
-            if ("mover".equals(accion)) {
+        if ("mover".equals(accion)) {
+            try {
+                int pedidoId = Integer.parseInt(request.getParameter("pedidoId"));
                 pedidoService.avanzarEstado(pedidoId);
-            } else if ("retroceder".equals(accion)) {
-                pedidoService.retrocederEstado(pedidoId);
+            } catch (NumberFormatException ex) {
+                request.getSession().setAttribute("error", "Identificador de pedido invalido");
+            } catch (RuntimeException ex) {
+                request.getSession().setAttribute("error", ex.getMessage());
             }
-        } catch (NumberFormatException ex) {
-            request.getSession().setAttribute("error", "Identificador de pedido invalido");
-        } catch (RuntimeException ex) {
-            request.getSession().setAttribute("error", ex.getMessage());
         }
         String rol = request.getParameter("rol");
         String destino = request.getContextPath() + "/pedidos";
