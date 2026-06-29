@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * Logica de negocio del tablero Kanban de pedidos: consulta por estado
- * para alimentar las columnas y avance/retroceso del ciclo de vida.
+ * para alimentar las columnas y avance del ciclo de vida del pedido.
  */
 public class PedidoService {
 
@@ -58,21 +58,5 @@ public class PedidoService {
     /** Alias de negocio usado por la accion "mover" del tablero. */
     public Pedido moverPedido(int pedidoId) {
         return avanzarEstado(pedidoId);
-    }
-
-    /**
-     * Retrocede el pedido al estado anterior cuando se avanzo por error (HU20)
-     * y persiste el cambio.
-     * @throws IllegalArgumentException si el pedido no existe ("Pedido no encontrado").
-     * @throws IllegalStateException    si esta en RECIBIDO o ENTREGADO.
-     */
-    public Pedido retrocederEstado(int pedidoId) {
-        Pedido pedido = pedidoDao.buscarPorId(pedidoId);
-        if (pedido == null) {
-            throw new IllegalArgumentException("Pedido no encontrado");
-        }
-        pedido.setEstado(pedido.getEstado().anterior());
-        pedidoDao.actualizar(pedido);
-        return pedido;
     }
 }
