@@ -1,0 +1,71 @@
+:root {
+    --bg: #0e1116;
+    --surface: #161b22;
+    --surface-2: #1c232d;
+    --border: #262d38;
+    --text: #e6edf3;
+    --muted: #8b97a6;
+    --listo: #22c55e;
+    --error: #ef4444;
+    --radius: 14px;
+    --shadow: 0 6px 22px rgba(0, 0, 0, .35);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(1200px 600px at 80% -10%, #1a2230 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+.menu-head { padding: 1.4rem 1.8rem .4rem; }
+.menu-head h1 { margin: 0; font-size: 1.4rem; letter-spacing: -.02em; }
+.menu-head p { margin: .25rem 0 0; color: var(--muted); font-size: .85rem; }
+
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+    padding: 1.2rem 1.8rem 2rem;
+}
+
+.plato {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+}
+
+.plato__nombre { margin: 0; font-size: 1.05rem; }
+
+.estado {
+    align-self: flex-start;
+    font-size: .74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding: .28rem .7rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+}
+.estado--disponible { color: #052e16; background: var(--listo); }
+.estado--bloqueado  { color: #fff; background: var(--error); }
+
+.plato__motivo { margin: 0; color: var(--muted); font-size: .85rem; }
+
+.menu-vacio {
+    margin: 1.2rem 1.8rem;
+    padding: 1.4rem;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    text-align: center;
+}
