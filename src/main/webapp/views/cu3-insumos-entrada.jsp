@@ -4,6 +4,8 @@
 <%
     List<Insumo> insumos = (List<Insumo>) request.getAttribute("insumos");
     String ctx = request.getContextPath();
+    String rol = request.getParameter("rol");
+    String rolQs = (rol == null || rol.isEmpty()) ? "" : ("?rol=" + rol);
 
     String mensaje = (String) session.getAttribute("mensaje");
     if (mensaje != null) { session.removeAttribute("mensaje"); }
@@ -17,18 +19,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventario de bodega | Dark Kitchen</title>
     <link rel="stylesheet" href="<%= ctx %>/resources/css/inventario.css">
+    <link rel="stylesheet" href="<%= ctx %>/resources/css/main.css">
+    <style>
+        .form__error { color: var(--error, #ef4444); font-size: .82rem; min-height: 1em; }
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 50;
+            background: rgba(2, 6, 12, .6);
+            align-items: center; justify-content: center; padding: 1rem;
+        }
+        .modal {
+            width: 100%; max-width: 380px;
+            background: var(--surface); color: var(--text);
+            border: 1px solid var(--border); border-radius: var(--radius, 14px);
+            box-shadow: var(--shadow); padding: 1.3rem 1.4rem;
+        }
+        .modal h3 { margin: 0 0 .5rem; font-size: 1.1rem; }
+        .modal__resumen {
+            margin: .2rem 0 1.1rem; padding: .7rem .8rem;
+            background: var(--surface-2); border-radius: 10px; font-size: .92rem;
+        }
+        .modal__acciones { display: flex; gap: .6rem; justify-content: flex-end; }
+        .modal__acciones .btn { min-width: 96px; }
+        .btn--ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    </style>
 </head>
 <body>
+<jsp:include page="navbar.jsp"/>
+
 <header class="inv-top">
     <div class="inv-top__brand">
         <span class="inv-top__dot"></span>
         <div>
             <h1>Inventario de bodega</h1>
-            <p>Entradas de lotes y ajustes de stock para todas las marcas</p>
+            <p>Entrada simplificada y ajustes de stock para todas las marcas</p>
         </div>
     </div>
     <nav class="inv-nav">
-        <a href="<%= ctx %>/pedidos">&larr; Volver al tablero</a>
+        <a href="<%= ctx %>/insumos/crear<%= rolQs %>">+ Crear insumo</a>
+        <a href="<%= ctx %>/pedidos<%= rolQs %>">&larr; Volver al tablero</a>
     </nav>
 </header>
 
@@ -49,7 +77,7 @@
                     <th>Insumo</th>
                     <th>Unidad</th>
                     <th class="num">Stock</th>
-                    <th class="num">Costo unit.</th>
+                    <th class="num">Stock min.</th>
                 </tr>
             </thead>
             <tbody>
@@ -62,7 +90,7 @@
                         <td><%= insumo.getNombre() %></td>
                         <td><%= insumo.getUnidad() %></td>
                         <td class="num"><%= insumo.getStock() %></td>
-                        <td class="num">$<%= insumo.getCostoUnitario() %></td>
+                        <td class="num"><%= insumo.getStockMinimo() %></td>
                     </tr>
                 <%     }
                    } %>
@@ -73,11 +101,13 @@
     <div class="formularios">
         <section class="panel panel--form">
             <h2>Registrar entrada</h2>
-            <p class="panel__hint">Ingreso de un lote de insumos (HU4).</p>
-            <form method="post" action="<%= ctx %>/insumos" class="form">
+            <p class="panel__hint">Solo insumo y cantidad (HU21).</p>
+            <form method="post" action="<%= ctx %>/insumos<%= rolQs %>" class="form form--confirmable"
+                  data-entero="true" data-titulo="Confirmar entrada" data-confirmar="Registrar">
                 <input type="hidden" name="accion" value="registrar">
                 <label>Insumo
                     <select name="insumoId" required>
+                        <option value="">-- Selecciona un insumo --</option>
                         <% if (insumos != null) {
                                for (Insumo insumo : insumos) { %>
                             <option value="<%= insumo.getId() %>"><%= insumo.getNombre() %></option>
@@ -86,28 +116,22 @@
                     </select>
                 </label>
                 <label>Cantidad
-                    <input type="number" name="cantidad" step="0.01" min="0.01" required>
+                    <input type="number" name="cantidad" step="1" min="1" required>
                 </label>
-                <label>Costo unitario
-                    <input type="number" name="costo" step="0.01" min="0" required>
-                </label>
-                <label>Orden de compra
-                    <input type="text" name="ordenCompra" placeholder="OC-2026-001" required>
-                </label>
-                <label>Factura
-                    <input type="text" name="factura" placeholder="FAC-0001" required>
-                </label>
-                <button type="submit" class="btn btn--ok">Registrar entrada</button>
+                <p class="form__error" aria-live="polite"></p>
+                <button type="submit" class="btn btn--ok">Registrar</button>
             </form>
         </section>
 
         <section class="panel panel--form">
             <h2>Reducir stock</h2>
             <p class="panel__hint">Mermas, perdidas o desperdicios (HU5).</p>
-            <form method="post" action="<%= ctx %>/insumos" class="form">
+            <form method="post" action="<%= ctx %>/insumos<%= rolQs %>" class="form form--confirmable"
+                  data-entero="false" data-titulo="Confirmar reduccion" data-confirmar="Confirmar reduccion">
                 <input type="hidden" name="accion" value="reducir">
                 <label>Insumo
                     <select name="insumoId" required>
+                        <option value="">-- Selecciona un insumo --</option>
                         <% if (insumos != null) {
                                for (Insumo insumo : insumos) { %>
                             <option value="<%= insumo.getId() %>"><%= insumo.getNombre() %></option>
@@ -118,10 +142,24 @@
                 <label>Cantidad a reducir
                     <input type="number" name="cantidad" step="0.01" min="0.01" required>
                 </label>
+                <p class="form__error" aria-live="polite"></p>
                 <button type="submit" class="btn btn--warn">Reducir stock</button>
             </form>
         </section>
     </div>
 </main>
+
+<div class="modal-overlay" id="modal-confirm" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+    <div class="modal">
+        <h3 id="modal-titulo">Confirmar</h3>
+        <p class="modal__resumen" id="modal-resumen"></p>
+        <div class="modal__acciones">
+            <button type="button" class="btn btn--ghost" id="modal-cancelar">Cancelar</button>
+            <button type="button" class="btn btn--ok" id="modal-confirmar">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<script src="<%= ctx %>/resources/js/inventario.js"></script>
 </body>
 </html>
