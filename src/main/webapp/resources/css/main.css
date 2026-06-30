@@ -1,0 +1,74 @@
+/*
+ * Estilos transversales (HU24): barra de navegacion compartida y overrides
+ * del modo claro. Cada vista carga primero su hoja propia (con los tokens
+ * oscuros por defecto en :root) y luego este archivo; las reglas
+ * "body.tema-claro" sobreescriben los tokens cuando el modo claro esta activo,
+ * sin redefinir el tema oscuro.
+ */
+
+/* ---------- Barra de navegacion compartida ---------- */
+.appbar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: .8rem 1.4rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+
+.appbar__brand { display: flex; align-items: center; gap: .6rem; }
+
+.appbar__dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--listo, #22c55e);
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, .18);
+}
+
+.appbar__name { font-weight: 700; letter-spacing: -.02em; color: var(--text); }
+
+.appbar__links { display: flex; gap: .3rem; flex-wrap: wrap; margin-left: .4rem; }
+
+.appbar__links a {
+    text-decoration: none;
+    color: var(--muted);
+    font-size: .82rem;
+    font-weight: 600;
+    padding: .4rem .7rem;
+    border-radius: 999px;
+    transition: color .15s, background .15s;
+}
+.appbar__links a:hover { color: var(--text); background: var(--surface-2); }
+
+.appbar__toggle {
+    margin-left: auto;
+    cursor: pointer;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: .45rem .9rem;
+    font-size: .82rem;
+    font-weight: 600;
+    transition: background .15s, border-color .15s;
+}
+.appbar__toggle:hover { border-color: #3a4350; }
+
+/* ---------- Modo claro: overrides de los tokens compartidos ---------- */
+body.tema-claro {
+    --bg: #f4f6fb;
+    --surface: #ffffff;
+    --surface-2: #eef1f7;
+    --border: #d4dae6;
+    --text: #16202c;
+    --muted: #5b6675;
+    --shadow: 0 6px 22px rgba(15, 23, 42, .12);
+    background: radial-gradient(1200px 600px at 80% -10%, #e7edf7 0%, var(--bg) 55%);
+    color: var(--text);
+}
+
+/* Mantener contraste de elementos que usan el color de texto como fondo */
+body.tema-claro .role--on { color: #ffffff; background: #16202c; border-color: #16202c; }
+body.tema-claro .appbar__dot { box-shadow: 0 0 0 4px rgba(34, 197, 94, .14); }
+
+/* Las etiquetas de estado conservan su color de acento en ambos modos. */
