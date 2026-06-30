@@ -4,8 +4,8 @@ import model.EstadoPedido;
 
 /**
  * Reglas de transicion de estados expuestas a la capa de presentacion.
- * Centraliza el orden correcto del flujo y las etiquetas de las acciones
- * para que el servlet y el tablero solo avancen pedidos de forma valida.
+ * Centraliza el orden del flujo y las etiquetas de las acciones para que el
+ * servlet y el tablero solo avancen o retrocedan pedidos de forma valida.
  */
 public class EstadoPedidoPolicy {
 
@@ -26,6 +26,14 @@ public class EstadoPedidoPolicy {
         return actual != null && !actual.esFinal();
     }
 
+    /**
+     * True si el pedido puede retroceder: solo desde EN_PREPARACION o LISTO.
+     * RECIBIDO (inicial) y ENTREGADO (terminal) no admiten retroceso (HU20).
+     */
+    public boolean puedeRetroceder(EstadoPedido actual) {
+        return actual == EstadoPedido.EN_PREPARACION || actual == EstadoPedido.LISTO;
+    }
+
     /** Texto del boton para avanzar desde el estado indicado. */
     public String etiquetaSiguienteAccion(EstadoPedido actual) {
         if (!puedeAvanzar(actual)) {
@@ -41,5 +49,10 @@ public class EstadoPedidoPolicy {
             default:
                 return "Completado";
         }
+    }
+
+    /** Texto del boton para retroceder un pedido. */
+    public String etiquetaRetroceso(EstadoPedido actual) {
+        return "Retroceder";
     }
 }
