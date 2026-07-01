@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="<%= ctx %>/resources/css/main.css">
 </head>
 <body>
-<jsp:include page="navbar.jsp"/>
+<jsp:include page="navbar.jsp"><jsp:param name="activo" value=""/></jsp:include>
 
 <main style="max-width:520px;margin:4rem auto;padding:0 1.5rem;text-align:center;">
     <div style="font-size:2.6rem;line-height:1;">&#128274;</div>

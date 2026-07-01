@@ -34,9 +34,10 @@ class CrearInsumoTest {
         when(insumoDao.buscarPorNombre("Cilantro fresco")).thenReturn(null);
         when(insumoDao.guardar(any(Insumo.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        Insumo creado = insumoService.crearInsumo("Cilantro fresco");
+        Insumo creado = insumoService.crearInsumo("Cilantro fresco", "kg");
 
         assertEquals(0.0, creado.getStock(), 0.0001);
+        assertEquals("kg", creado.getUnidad());
         verify(insumoDao).guardar(any(Insumo.class));
     }
 
