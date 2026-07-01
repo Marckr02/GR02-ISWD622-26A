@@ -63,7 +63,7 @@ public class PedidoService {
         if (pedido == null) {
             throw new IllegalArgumentException("No existe el pedido " + pedidoId);
         }
-        validarStockParaPreparacion(pedido);
+        validarYDescontarStockParaPreparacion(pedido);
         pedido.setEstado(pedido.getEstado().siguiente());
         pedidoDao.actualizar(pedido);
         return pedido;
@@ -90,7 +90,14 @@ public class PedidoService {
         return pedido;
     }
 
-    private void validarStockParaPreparacion(Pedido pedido) {
+    /**
+     * Valida el stock necesario para pasar el pedido a preparacion y, si es
+     * suficiente, descuenta automaticamente 1 unidad de cada insumo que
+     * compone el plato (HU: descuento de stock al iniciar preparacion).
+     * Si falta stock de uno o mas insumos no se descuenta nada y se lanza
+     * StockInsuficienteException con el detalle de lo que falta.
+     */
+    private void validarYDescontarStockParaPreparacion(Pedido pedido) {
         if (pedido.getEstado() != EstadoPedido.RECIBIDO || pedido.getPlatoId() <= 0) {
             return;
         }
@@ -99,6 +106,7 @@ public class PedidoService {
             return;
         }
         List<String> faltantes = new ArrayList<>();
+        List<Insumo> insumosADescontar = new ArrayList<>();
         for (int insumoId : plato.getInsumoIds()) {
             Insumo insumo = insumoDao.buscarPorId(insumoId);
             if (insumo == null) {
@@ -107,10 +115,16 @@ public class PedidoService {
                 faltantes.add(insumo.getNombre() + " (disponible: "
                         + formatear(insumo.getStock()) + " " + insumo.getUnidad()
                         + ", requerido: 1 " + insumo.getUnidad() + ")");
+            } else {
+                insumosADescontar.add(insumo);
             }
         }
         if (!faltantes.isEmpty()) {
             throw new StockInsuficienteException(plato.getNombre(), faltantes);
+        }
+        for (Insumo insumo : insumosADescontar) {
+            insumo.setStock(insumo.getStock() - 1);
+            insumoDao.actualizar(insumo);
         }
     }
 
