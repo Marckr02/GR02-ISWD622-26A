@@ -15,15 +15,19 @@ import java.util.EnumSet;
 import java.util.Set;
 
 /**
- * Control de acceso por rol (Tarea Tecnica de roles + HU9/HU10/HU23). Protege
- * las rutas sensibles permitiendo solo los roles autorizados; si el rol actual
- * no tiene permiso, reenvia a la pantalla de acceso denegado.
+ * Control de acceso por rol. Cada seccion sensible solo admite los roles que
+ * le corresponden:
+ *   - Inventario (ver, registrar entrada, reducir stock) y creacion de insumos:
+ *     unicamente ADMIN_BODEGA.
+ *   - Menu y panel de monitoreo: ADMIN_BODEGA.
+ *   - Consulta de disponibilidad del cocinero: COCINERO.
+ * El tablero (/pedidos) queda abierto como pantalla de inicio; el rol
+ * ADMINISTRADOR no tiene secciones asignadas por ahora.
  *
  * El rol vigente se toma del parametro "rol" o del atributo de sesion "rol"
- * (el sistema no implementa login real). Solo se reconocen los tres roles
- * validos: COCINERO, ADMIN_BODEGA y ADMINISTRADOR.
+ * (el sistema no implementa login real).
  */
-@WebFilter(urlPatterns = {"/monitoreo", "/disponibilidad", "/insumos/crear"})
+@WebFilter(urlPatterns = {"/insumos", "/insumos/crear", "/menu", "/monitoreo", "/disponibilidad"})
 public class AuthFilter implements Filter {
 
     @Override
@@ -32,10 +36,9 @@ public class AuthFilter implements Filter {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
 
-        String ruta = request.getServletPath();
         Rol rol = resolverRol(request);
 
-        if (!tienePermiso(ruta, rol)) {
+        if (!tienePermiso(request.getServletPath(), rol)) {
             request.setAttribute("mensajeAcceso", "No tienes permisos para acceder a esta seccion");
             request.getRequestDispatcher("/views/acceso-denegado.jsp").forward(request, response);
             return;
@@ -50,14 +53,14 @@ public class AuthFilter implements Filter {
         }
         Set<Rol> permitidos;
         switch (ruta) {
-            case "/monitoreo":          // HU9: panel de bodega (COCINERO denegado)
-                permitidos = EnumSet.of(Rol.ADMIN_BODEGA, Rol.ADMINISTRADOR);
+            case "/insumos":        // ver inventario, registrar entrada y reducir stock
+            case "/insumos/crear":  // alta de insumos
+            case "/menu":           // menu y disponibilidad general
+            case "/monitoreo":      // panel de monitoreo
+                permitidos = EnumSet.of(Rol.ADMIN_BODEGA);
                 break;
-            case "/disponibilidad":     // HU10: vista del cocinero (ADMIN_BODEGA denegado)
-                permitidos = EnumSet.of(Rol.COCINERO, Rol.ADMINISTRADOR);
-                break;
-            case "/insumos/crear":      // HU23: alta de insumos (COCINERO denegado)
-                permitidos = EnumSet.of(Rol.ADMIN_BODEGA, Rol.ADMINISTRADOR);
+            case "/disponibilidad": // vista del cocinero
+                permitidos = EnumSet.of(Rol.COCINERO);
                 break;
             default:
                 permitidos = EnumSet.allOf(Rol.class);
@@ -68,7 +71,11 @@ public class AuthFilter implements Filter {
     /** Lee el rol del parametro de la peticion o, en su defecto, de la sesion. */
     private Rol resolverRol(HttpServletRequest request) {
         Rol rol = Rol.desde(request.getParameter("rol"));
-        if (rol == null && request.getSession(false) != null) {
+        if (rol != null) {
+            request.getSession().setAttribute("rol", rol.name());
+            return rol;
+        }
+        if (request.getSession(false) != null) {
             rol = Rol.desde((String) request.getSession().getAttribute("rol"));
         }
         return rol;

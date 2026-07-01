@@ -8,14 +8,16 @@
     EstadoPedidoPolicy policy = (EstadoPedidoPolicy) request.getAttribute("policy");
     if (policy == null) { policy = new EstadoPedidoPolicy(); }
 
-    // Tarea Tecnica de roles: solo COCINERO, ADMIN_BODEGA y ADMINISTRADOR.
     Rol rol = Rol.desde(request.getParameter("rol"));
+    if (rol == null) { rol = Rol.desde((String) session.getAttribute("rol")); }
     if (rol == null) { rol = Rol.COCINERO; }
-    boolean puedeOperar = (rol == Rol.COCINERO || rol == Rol.ADMINISTRADOR);
+    boolean puedeOperar = (rol == Rol.COCINERO);   // el cocinero opera el pase; bodega solo consulta
 
     String ctx = request.getContextPath();
     String error = (String) session.getAttribute("error");
     if (error != null) { session.removeAttribute("error"); }
+    List<String> stockFaltantes = (List<String>) session.getAttribute("stockFaltantes");
+    if (stockFaltantes != null) { session.removeAttribute("stockFaltantes"); }
 %>
 <!DOCTYPE html>
 <html lang="es">
@@ -25,9 +27,47 @@
     <title>Pase de cocina | Dark Kitchen</title>
     <link rel="stylesheet" href="<%= ctx %>/resources/css/kanban.css">
     <link rel="stylesheet" href="<%= ctx %>/resources/css/main.css">
+    <style>
+        .card__acciones { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .2rem; }
+        .btn--retro { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+        .btn--retro:hover { color: var(--text); border-color: #3a4350; }
+        .sin-seccion {
+            max-width: 460px; margin: 4.5rem auto; text-align: center;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius, 14px); box-shadow: var(--shadow); padding: 2.2rem 1.6rem;
+        }
+        .pase-top__hint { color: var(--muted); font-size: .8rem; font-weight: 600;
+            border: 1px solid var(--border); border-radius: 999px; padding: .35rem .8rem; }
+        .sin-seccion h2 { margin: .3rem 0 .4rem; font-size: 1.2rem; }
+        .sin-seccion p { margin: 0; color: var(--muted); }
+        .modal-alerta {
+            position: fixed; inset: 0; z-index: 60; display: flex;
+            align-items: center; justify-content: center; padding: 1rem;
+            background: rgba(2, 6, 12, .58);
+        }
+        .modal-alerta__panel {
+            width: 100%; max-width: 460px; background: var(--surface);
+            color: var(--text); border: 1px solid var(--border);
+            border-radius: var(--radius, 14px); box-shadow: var(--shadow);
+            padding: 1.4rem;
+        }
+        .modal-alerta__panel h2 { margin: 0 0 .5rem; font-size: 1.15rem; }
+        .modal-alerta__panel p { color: var(--muted); margin: 0 0 1rem; line-height: 1.45; }
+        .modal-alerta__panel ul { margin: 0 0 1rem 1.2rem; padding: 0; color: var(--text); }
+        .modal-alerta__panel li { margin: .35rem 0; }
+        .modal-alerta__panel .btn { width: 100%; }
+    </style>
 </head>
 <body data-rol="<%= rol.name() %>">
-<jsp:include page="navbar.jsp"/>
+<jsp:include page="navbar.jsp"><jsp:param name="activo" value="tablero"/></jsp:include>
+
+<% if (rol == Rol.ADMINISTRADOR) { %>
+    <section class="sin-seccion">
+        <div style="font-size:2.2rem;line-height:1;">&#9788;</div>
+        <h2>Sin secciones asignadas</h2>
+        <p>El perfil de administrador aun no tiene vistas habilitadas. Cambia de vista desde la barra superior.</p>
+    </section>
+<% } else { %>
 
 <header class="pase-top">
     <div class="pase-top__brand">
@@ -37,16 +77,26 @@
             <p>Tablero de produccion en tiempo real</p>
         </div>
     </div>
-    <nav class="roles" aria-label="Cambiar rol de la vista">
-        <span class="roles__label">Vista:</span>
-        <a class="role <%= rol == Rol.COCINERO ? "role--on" : "" %>" href="<%= ctx %>/pedidos?rol=COCINERO">Cocinero</a>
-        <a class="role <%= rol == Rol.ADMIN_BODEGA ? "role--on" : "" %>" href="<%= ctx %>/pedidos?rol=ADMIN_BODEGA">Admin. bodega</a>
-        <a class="role <%= rol == Rol.ADMINISTRADOR ? "role--on" : "" %>" href="<%= ctx %>/pedidos?rol=ADMINISTRADOR">Administrador</a>
-    </nav>
+    <% if (!puedeOperar) { %>
+        <span class="pase-top__hint">Vista de consulta</span>
+    <% } %>
 </header>
 
 <% if (error != null) { %>
-    <div class="aviso aviso--error" role="alert"><%= error %></div>
+    <div class="modal-alerta" role="alertdialog" aria-modal="true" aria-labelledby="stock-alerta-titulo">
+        <div class="modal-alerta__panel">
+            <h2 id="stock-alerta-titulo">Stock insuficiente</h2>
+            <p><%= error %></p>
+            <% if (stockFaltantes != null && !stockFaltantes.isEmpty()) { %>
+                <ul>
+                    <% for (String faltante : stockFaltantes) { %>
+                        <li><%= faltante %></li>
+                    <% } %>
+                </ul>
+            <% } %>
+            <button type="button" class="btn" onclick="this.closest('.modal-alerta').remove()">Entendido</button>
+        </div>
+    </div>
 <% } %>
 
 <main class="tablero">
@@ -99,15 +149,7 @@
     <% } %>
 </main>
 
-<footer class="pase-bottom">
-    <a href="<%= ctx %>/insumos">Ir a inventario &rarr;</a>
-</footer>
-
 <script src="<%= ctx %>/resources/js/kanban.js"></script>
-<style>
-    .card__acciones { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .2rem; }
-    .btn--retro { background: transparent; border: 1px solid var(--border); color: var(--muted); }
-    .btn--retro:hover { color: var(--text); border-color: #3a4350; }
-</style>
+<% } %>
 </body>
 </html>

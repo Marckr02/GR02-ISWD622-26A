@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 public class InsumoService {
 
     private static final String PATRON_NOMBRE = "[\\p{L}\\p{N} \\-]{2,100}";
+    private static final List<String> UNIDADES_PERMITIDAS = List.of("kg", "l", "unidades");
 
     private final InsumoDao insumoDao;
     private final ValidadorEntradaInsumo validador;
@@ -103,31 +104,54 @@ public class InsumoService {
      *         cantidad no es valida o el insumo no fue seleccionado/existe.
      */
     public Insumo registrarEntradaSimplificada(int insumoId, String cantidadTexto) {
-        int cantidad = parsearCantidadEntera(cantidadTexto);
+        return registrarEntradaSimplificada(insumoId, cantidadTexto, null);
+    }
+
+    public Insumo registrarEntradaSimplificada(int insumoId, String cantidadTexto, String unidadTexto) {
+        double cantidad = parsearCantidadPositiva(cantidadTexto);
+        String unidad = normalizarUnidad(unidadTexto);
         Insumo insumo = insumoDao.buscarPorId(insumoId);
         if (insumo == null) {
             throw new IllegalArgumentException("Debe seleccionar un insumo de la lista");
+        }
+        String unidadFinal = (unidad == null) ? insumo.getUnidad() : unidad;
+        if ("unidades".equals(unidadFinal) && cantidad != Math.rint(cantidad)) {
+            throw new IllegalArgumentException("La cantidad en unidades debe ser un numero entero");
+        }
+        if (unidad != null && !unidad.equals(insumo.getUnidad())) {
+            throw new IllegalArgumentException(
+                    "La unidad seleccionada no coincide con la unidad actual del insumo");
         }
         insumo.setStock(insumo.getStock() + cantidad);
         insumoDao.actualizar(insumo);
         return insumo;
     }
 
-    private int parsearCantidadEntera(String cantidadTexto) {
+    private double parsearCantidadPositiva(String cantidadTexto) {
         if (cantidadTexto == null || cantidadTexto.trim().isEmpty()) {
-            throw new IllegalArgumentException("Ingrese un numero entero positivo valido");
+            throw new IllegalArgumentException("Ingrese un numero positivo valido");
         }
-        int cantidad;
+        double cantidad;
         try {
-            cantidad = Integer.parseInt(cantidadTexto.trim());
+            cantidad = Double.parseDouble(cantidadTexto.trim());
         } catch (NumberFormatException ex) {
-            throw new IllegalArgumentException("Ingrese un numero entero positivo valido");
+            throw new IllegalArgumentException("Ingrese un numero positivo valido");
         }
         if (cantidad <= 0) {
-            throw new IllegalArgumentException(
-                    "La cantidad debe ser un numero entero positivo mayor a cero");
+            throw new IllegalArgumentException("La cantidad debe ser mayor a cero");
         }
         return cantidad;
+    }
+
+    private String normalizarUnidad(String unidadTexto) {
+        if (unidadTexto == null || unidadTexto.trim().isEmpty()) {
+            return null;
+        }
+        String unidad = unidadTexto.trim().toLowerCase();
+        if (!UNIDADES_PERMITIDAS.contains(unidad)) {
+            throw new IllegalArgumentException("Seleccione una unidad valida");
+        }
+        return unidad;
     }
 
     /**
@@ -136,7 +160,12 @@ public class InsumoService {
      * y guiones) y no puede duplicar uno existente (sin distincion de mayusculas).
      */
     public Insumo crearInsumo(String nombre) {
+        return crearInsumo(nombre, "unidades");
+    }
+
+    public Insumo crearInsumo(String nombre, String unidadTexto) {
         String limpio = (nombre == null) ? "" : nombre.trim();
+        String unidad = requerirUnidad(unidadTexto);
         if (limpio.isEmpty()) {
             throw new IllegalArgumentException("El nombre del insumo no puede estar vacio");
         }
@@ -148,6 +177,43 @@ public class InsumoService {
         if (insumoDao.buscarPorNombre(limpio) != null) {
             throw new IllegalArgumentException("Ya existe un insumo con ese nombre");
         }
-        return insumoDao.guardar(new Insumo(0, limpio, "unidades", 0.0, 0.0, 0.0));
+        return insumoDao.guardar(new Insumo(0, limpio, unidad, 0.0, 0.0, 0.0));
+    }
+
+    public Insumo editarInsumo(int insumoId, String nombre, String unidadTexto) {
+        Insumo insumo = insumoDao.buscarPorId(insumoId);
+        if (insumo == null) {
+            throw new IllegalArgumentException("No existe el insumo " + insumoId);
+        }
+        String limpio = (nombre == null) ? "" : nombre.trim();
+        String unidad = requerirUnidad(unidadTexto);
+        if (limpio.isEmpty()) {
+            throw new IllegalArgumentException("El nombre del insumo no puede estar vacio");
+        }
+        if (!limpio.matches(PATRON_NOMBRE)) {
+            throw new IllegalArgumentException(
+                    "El nombre solo puede contener letras, numeros, espacios y guiones, "
+                            + "con un maximo de 100 caracteres");
+        }
+        Insumo duplicado = insumoDao.buscarPorNombre(limpio);
+        if (duplicado != null && duplicado.getId() != insumoId) {
+            throw new IllegalArgumentException("Ya existe un insumo con ese nombre");
+        }
+        if ("unidades".equals(unidad) && insumo.getStock() != Math.rint(insumo.getStock())) {
+            throw new IllegalArgumentException(
+                    "No se puede cambiar a unidades porque el stock actual tiene decimales");
+        }
+        insumo.setNombre(limpio);
+        insumo.setUnidad(unidad);
+        insumoDao.actualizar(insumo);
+        return insumo;
+    }
+
+    private String requerirUnidad(String unidadTexto) {
+        String unidad = normalizarUnidad(unidadTexto);
+        if (unidad == null) {
+            throw new IllegalArgumentException("Seleccione una unidad valida");
+        }
+        return unidad;
     }
 }

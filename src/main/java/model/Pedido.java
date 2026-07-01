@@ -11,6 +11,7 @@ public class Pedido {
     private int id;
     private String descripcion;
     private String marca;
+    private int platoId;
     private EstadoPedido estado;
     private LocalDateTime creadoEn;
 
@@ -20,11 +21,16 @@ public class Pedido {
     }
 
     public Pedido(int id, String descripcion, String marca, EstadoPedido estado) {
+        this(id, descripcion, marca, estado, 0);
+    }
+
+    public Pedido(int id, String descripcion, String marca, EstadoPedido estado, int platoId) {
         this();
         this.id = id;
         this.descripcion = descripcion;
         this.marca = marca;
         this.estado = estado;
+        this.platoId = platoId;
     }
 
     public int getId() {
@@ -49,6 +55,14 @@ public class Pedido {
 
     public void setMarca(String marca) {
         this.marca = marca;
+    }
+
+    public int getPlatoId() {
+        return platoId;
+    }
+
+    public void setPlatoId(int platoId) {
+        this.platoId = platoId;
     }
 
     public EstadoPedido getEstado() {

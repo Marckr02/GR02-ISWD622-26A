@@ -16,11 +16,11 @@
     <link rel="stylesheet" href="<%= ctx %>/resources/css/main.css">
 </head>
 <body>
-<jsp:include page="navbar.jsp"/>
+<jsp:include page="navbar.jsp"><jsp:param name="activo" value="disponibilidad"/></jsp:include>
 
 <header class="menu-head">
     <h1>Disponibilidad para el turno</h1>
-    <p>Que puedes preparar antes de comenzar: estado de cada plato y su motivo de bloqueo (HU10).</p>
+    <p>Que puedes preparar antes de comenzar: estado de cada plato y su motivo de bloqueo.</p>
 </header>
 
 <% if (menu == null || menu.isEmpty()) { %>

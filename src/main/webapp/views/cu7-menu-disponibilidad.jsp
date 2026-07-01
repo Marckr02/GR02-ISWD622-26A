@@ -16,11 +16,11 @@
     <link rel="stylesheet" href="<%= ctx %>/resources/css/main.css">
 </head>
 <body>
-<jsp:include page="navbar.jsp"/>
+<jsp:include page="navbar.jsp"><jsp:param name="activo" value="menu"/></jsp:include>
 
 <header class="menu-head">
     <h1>Menu y disponibilidad</h1>
-    <p>Sincronizado en tiempo real con el inventario (HU7).</p>
+    <p>Disponibilidad de cada plato segun el stock actual.</p>
 </header>
 
 <% if (menu == null || menu.isEmpty()) { %>

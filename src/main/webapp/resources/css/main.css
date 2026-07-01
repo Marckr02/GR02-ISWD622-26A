@@ -1,74 +1,153 @@
 /*
- * Estilos transversales (HU24): barra de navegacion compartida y overrides
- * del modo claro. Cada vista carga primero su hoja propia (con los tokens
- * oscuros por defecto en :root) y luego este archivo; las reglas
- * "body.tema-claro" sobreescriben los tokens cuando el modo claro esta activo,
- * sin redefinir el tema oscuro.
+ * Estilos transversales: barra superior (marca + selector de vista + tema),
+ * barra de pestanas filtradas por rol y overrides del modo claro. Cada vista
+ * carga primero su hoja propia (tokens oscuros en :root) y luego este archivo;
+ * las reglas "body.tema-claro" reescriben los tokens para el modo claro.
  */
 
-/* ---------- Barra de navegacion compartida ---------- */
-.appbar {
+:root {
+    --accent: #34d399;
+    --accent-ink: #04231a;
+    --accent-soft: rgba(52, 211, 153, .14);
+    --topbar-h: 60px;
+}
+
+/* ===================== Barra superior ===================== */
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 1rem;
     flex-wrap: wrap;
-    padding: .8rem 1.4rem;
+    padding: .7rem 1.6rem;
     background: var(--surface);
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: saturate(140%) blur(8px);
     border-bottom: 1px solid var(--border);
 }
 
-.appbar__brand { display: flex; align-items: center; gap: .6rem; }
+.topbar__brand { display: flex; align-items: center; gap: .65rem; }
 
-.appbar__dot {
-    width: 12px; height: 12px; border-radius: 50%;
-    background: var(--listo, #22c55e);
-    box-shadow: 0 0 0 4px rgba(34, 197, 94, .18);
+.topbar__logo {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #6ee7b7, #22c55e 60%, #15803d);
+    box-shadow: 0 0 0 4px var(--accent-soft), 0 0 14px rgba(34, 197, 94, .5);
 }
 
-.appbar__name { font-weight: 700; letter-spacing: -.02em; color: var(--text); }
+.topbar__name {
+    font-weight: 800;
+    letter-spacing: -.02em;
+    font-size: 1.06rem;
+    color: var(--text);
+}
 
-.appbar__links { display: flex; gap: .3rem; flex-wrap: wrap; margin-left: .4rem; }
+.topbar__right { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
 
-.appbar__links a {
+/* Selector de vista (segmentado) */
+.vista {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    padding: .28rem .32rem .28rem .7rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+}
+
+.vista__label {
+    font-size: .66rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-right: .15rem;
+}
+
+.vista__pill {
     text-decoration: none;
     color: var(--muted);
-    font-size: .82rem;
+    font-size: .8rem;
     font-weight: 600;
-    padding: .4rem .7rem;
+    padding: .38rem .8rem;
     border-radius: 999px;
-    transition: color .15s, background .15s;
+    white-space: nowrap;
+    transition: background .15s, color .15s;
 }
-.appbar__links a:hover { color: var(--text); background: var(--surface-2); }
+.vista__pill:hover { color: var(--text); }
+.vista__pill.is-on {
+    color: var(--accent-ink);
+    background: var(--accent);
+    box-shadow: 0 2px 10px rgba(34, 197, 94, .35);
+}
 
-.appbar__toggle {
-    margin-left: auto;
+/* Boton de tema */
+.toggle {
     cursor: pointer;
     color: var(--text);
     background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: 999px;
-    padding: .45rem .9rem;
-    font-size: .82rem;
+    padding: .5rem 1rem;
+    font-size: .8rem;
     font-weight: 600;
-    transition: background .15s, border-color .15s;
+    white-space: nowrap;
+    transition: border-color .15s, background .15s;
 }
-.appbar__toggle:hover { border-color: #3a4350; }
+.toggle:hover { border-color: #3a4350; }
 
-/* ---------- Modo claro: overrides de los tokens compartidos ---------- */
+/* ===================== Barra de pestanas ===================== */
+.tabsbar {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .55rem 1.6rem;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tab {
+    text-decoration: none;
+    color: var(--muted);
+    font-size: .86rem;
+    font-weight: 600;
+    padding: .5rem .95rem;
+    border-radius: 10px;
+    white-space: nowrap;
+    transition: background .15s, color .15s;
+}
+.tab:hover { color: var(--text); background: var(--surface-2); }
+.tab.is-on {
+    color: var(--accent-ink);
+    background: var(--accent);
+}
+
+.tabsbar__empty {
+    color: var(--muted);
+    font-size: .84rem;
+    font-style: italic;
+    padding: .5rem .2rem;
+}
+
+/* ===================== Modo claro ===================== */
 body.tema-claro {
     --bg: #f4f6fb;
     --surface: #ffffff;
     --surface-2: #eef1f7;
-    --border: #d4dae6;
+    --border: #d6dce8;
     --text: #16202c;
     --muted: #5b6675;
     --shadow: 0 6px 22px rgba(15, 23, 42, .12);
+    --accent: #0d9488;
+    --accent-ink: #ffffff;
+    --accent-soft: rgba(13, 148, 136, .14);
     background: radial-gradient(1200px 600px at 80% -10%, #e7edf7 0%, var(--bg) 55%);
     color: var(--text);
 }
-
-/* Mantener contraste de elementos que usan el color de texto como fondo */
-body.tema-claro .role--on { color: #ffffff; background: #16202c; border-color: #16202c; }
-body.tema-claro .appbar__dot { box-shadow: 0 0 0 4px rgba(34, 197, 94, .14); }
-
-/* Las etiquetas de estado conservan su color de acento en ambos modos. */
+body.tema-claro .topbar__logo { box-shadow: 0 0 0 4px var(--accent-soft); }
+body.tema-claro .vista__pill.is-on { box-shadow: 0 2px 10px rgba(13, 148, 136, .3); }
+body.tema-claro .toggle:hover { border-color: #b7c0d0; }

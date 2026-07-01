@@ -1,5 +1,5 @@
 /**
- * Alternancia de tema claro/oscuro (HU24). Anade o quita la clase
+ * Alternancia de tema claro/oscuro. Anade o quita la clase
  * "tema-claro" en <body> y guarda la preferencia en sessionStorage, de modo
  * que se mantiene mientras dura la sesion pero NO entre sesiones distintas.
  */
