@@ -6,8 +6,10 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import model.EstadoPedido;
+import model.Rol;
 import service.EstadoPedidoPolicy;
 import service.PedidoService;
+import service.StockInsuficienteException;
 
 import java.io.IOException;
 
@@ -25,6 +27,10 @@ public class PedidoKanbanServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        Rol rol = Rol.desde(request.getParameter("rol"));
+        if (rol != null) {
+            request.getSession().setAttribute("rol", rol.name());
+        }
         for (EstadoPedido estado : EstadoPedido.values()) {
             request.setAttribute("col_" + estado.name(), pedidoService.listarPorEstado(estado));
         }
@@ -45,11 +51,17 @@ public class PedidoKanbanServlet extends HttpServlet {
             }
         } catch (NumberFormatException ex) {
             request.getSession().setAttribute("error", "Identificador de pedido invalido");
+        } catch (StockInsuficienteException ex) {
+            request.getSession().setAttribute("error", ex.getMessage());
+            request.getSession().setAttribute("stockFaltantes", ex.getFaltantes());
         } catch (RuntimeException ex) {
             request.getSession().setAttribute("error", ex.getMessage());
         }
-        String rol = request.getParameter("rol");
+        Rol rol = Rol.desde(request.getParameter("rol"));
+        if (rol != null) {
+            request.getSession().setAttribute("rol", rol.name());
+        }
         String destino = request.getContextPath() + "/pedidos";
-        response.sendRedirect(rol == null ? destino : destino + "?rol=" + rol);
+        response.sendRedirect(rol == null ? destino : destino + "?rol=" + rol.name());
     }
 }

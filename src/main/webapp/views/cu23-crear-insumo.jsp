@@ -5,6 +5,9 @@
     List<Insumo> insumos = (List<Insumo>) request.getAttribute("insumos");
     String ctx = request.getContextPath();
     String rol = request.getParameter("rol");
+    if ((rol == null || rol.isEmpty()) && session.getAttribute("rol") != null) {
+        rol = (String) session.getAttribute("rol");
+    }
     String rolQs = (rol == null || rol.isEmpty()) ? "" : ("?rol=" + rol);
 
     String mensaje = (String) session.getAttribute("mensaje");
@@ -22,14 +25,14 @@
     <link rel="stylesheet" href="<%= ctx %>/resources/css/main.css">
 </head>
 <body>
-<jsp:include page="navbar.jsp"/>
+<jsp:include page="navbar.jsp"><jsp:param name="activo" value="crear"/></jsp:include>
 
 <header class="inv-top">
     <div class="inv-top__brand">
         <span class="inv-top__dot"></span>
         <div>
             <h1>Crear insumo</h1>
-            <p>Alta manual de un insumo con stock inicial en cero (HU23).</p>
+            <p>Alta manual de un insumo con stock inicial en cero.</p>
         </div>
     </div>
     <nav class="inv-nav">
@@ -54,6 +57,13 @@
                 <input type="text" name="nombre" maxlength="100" required
                        placeholder="Ej: Cilantro fresco">
             </label>
+            <label>Unidad
+                <select name="unidad" required>
+                    <option value="kg">kg</option>
+                    <option value="l">l</option>
+                    <option value="unidades">unidades</option>
+                </select>
+            </label>
             <button type="submit" class="btn btn--ok">Guardar</button>
         </form>
     </section>
@@ -68,19 +78,35 @@
                     <th>Unidad</th>
                     <th class="num">Stock</th>
                     <th class="num">Stock min.</th>
+                    <th>Accion</th>
                 </tr>
             </thead>
             <tbody>
                 <% if (insumos == null || insumos.isEmpty()) { %>
-                    <tr><td colspan="5" class="vacio">Sin insumos registrados.</td></tr>
+                    <tr><td colspan="6" class="vacio">Sin insumos registrados.</td></tr>
                 <% } else {
                        for (Insumo insumo : insumos) { %>
                     <tr>
-                        <td><%= insumo.getId() %></td>
-                        <td><%= insumo.getNombre() %></td>
-                        <td><%= insumo.getUnidad() %></td>
+                        <td>
+                            <%= insumo.getId() %>
+                            <form id="editar-<%= insumo.getId() %>" method="post" action="<%= ctx %>/insumos/crear<%= rolQs %>">
+                                <input type="hidden" name="accion" value="editar">
+                                <input type="hidden" name="insumoId" value="<%= insumo.getId() %>">
+                            </form>
+                        </td>
+                        <td>
+                            <input form="editar-<%= insumo.getId() %>" type="text" name="nombre" value="<%= insumo.getNombre() %>" maxlength="100" required>
+                        </td>
+                        <td>
+                            <select form="editar-<%= insumo.getId() %>" name="unidad" required>
+                                <option value="kg" <%= "kg".equals(insumo.getUnidad()) ? "selected" : "" %>>kg</option>
+                                <option value="l" <%= "l".equals(insumo.getUnidad()) ? "selected" : "" %>>l</option>
+                                <option value="unidades" <%= "unidades".equals(insumo.getUnidad()) ? "selected" : "" %>>unidades</option>
+                            </select>
+                        </td>
                         <td class="num"><%= insumo.getStock() %></td>
                         <td class="num"><%= insumo.getStockMinimo() %></td>
+                        <td><button form="editar-<%= insumo.getId() %>" type="submit" class="btn btn--ok">Actualizar</button></td>
                     </tr>
                 <%     }
                    } %>

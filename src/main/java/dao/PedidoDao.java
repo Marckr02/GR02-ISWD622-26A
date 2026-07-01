@@ -21,20 +21,20 @@ public class PedidoDao {
     private static final AtomicInteger SECUENCIA = new AtomicInteger(0);
 
     static {
-        sembrar("Pollo BBQ + papas - Crispy House", EstadoPedido.RECIBIDO);
-        sembrar("Bowl vegano mediano - Green Bowl", EstadoPedido.RECIBIDO);
-        sembrar("Pizza pepperoni familiar - Napoli", EstadoPedido.EN_PREPARACION);
-        sembrar("Hamburguesa doble - Burger Lab", EstadoPedido.EN_PREPARACION);
-        sembrar("Sushi roll x12 - Sakura", EstadoPedido.LISTO);
-        sembrar("Tacos al pastor x6 - El Fogon", EstadoPedido.ENTREGADO);
+        sembrar("Pizza Margarita - Napoli", EstadoPedido.RECIBIDO, 1);
+        sembrar("Hamburguesa Clasica - Burger Lab", EstadoPedido.RECIBIDO, 2);
+        sembrar("Pizza pepperoni familiar - Napoli", EstadoPedido.EN_PREPARACION, 1);
+        sembrar("Hamburguesa doble - Burger Lab", EstadoPedido.EN_PREPARACION, 2);
+        sembrar("Sushi roll x12 - Sakura", EstadoPedido.LISTO, 0);
+        sembrar("Tacos al pastor x6 - El Fogon", EstadoPedido.ENTREGADO, 0);
     }
 
-    private static void sembrar(String descripcion, EstadoPedido estado) {
+    private static void sembrar(String descripcion, EstadoPedido estado, int platoId) {
         int id = SECUENCIA.incrementAndGet();
         String marca = descripcion.contains("-")
                 ? descripcion.substring(descripcion.indexOf('-') + 1).trim()
                 : "Generica";
-        ALMACEN.put(id, new Pedido(id, descripcion, marca, estado));
+        ALMACEN.put(id, new Pedido(id, descripcion, marca, estado, platoId));
     }
 
     public Pedido guardar(Pedido pedido) {

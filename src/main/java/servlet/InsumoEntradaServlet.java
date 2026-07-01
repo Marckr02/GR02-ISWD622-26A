@@ -46,18 +46,24 @@ public class InsumoEntradaServlet extends HttpServlet {
                 insumoService.reducirStock(insumoId, cantidad);
                 request.getSession().setAttribute("mensaje", "Stock reducido correctamente");
             } else if ("crear".equals(accion)) {
-                insumoService.crearInsumo(request.getParameter("nombre"));
+                insumoService.crearInsumo(request.getParameter("nombre"), request.getParameter("unidad"));
                 request.getSession().setAttribute("mensaje", "Insumo creado correctamente");
+                destino = request.getContextPath() + "/insumos/crear";
+            } else if ("editar".equals(accion)) {
+                int insumoId = parsearInsumo(request.getParameter("insumoId"));
+                insumoService.editarInsumo(
+                        insumoId, request.getParameter("nombre"), request.getParameter("unidad"));
+                request.getSession().setAttribute("mensaje", "Insumo actualizado correctamente");
                 destino = request.getContextPath() + "/insumos/crear";
             }
         } catch (NumberFormatException ex) {
             request.getSession().setAttribute("error", "Ingrese un numero valido");
-            if ("crear".equals(accion)) {
+            if ("crear".equals(accion) || "editar".equals(accion)) {
                 destino = request.getContextPath() + "/insumos/crear";
             }
         } catch (RuntimeException ex) {
             request.getSession().setAttribute("error", ex.getMessage());
-            if ("crear".equals(accion)) {
+            if ("crear".equals(accion) || "editar".equals(accion)) {
                 destino = request.getContextPath() + "/insumos/crear";
             }
         }

@@ -18,11 +18,11 @@
     <link rel="stylesheet" href="<%= ctx %>/resources/css/main.css">
 </head>
 <body>
-<jsp:include page="navbar.jsp"/>
+<jsp:include page="navbar.jsp"><jsp:param name="activo" value="monitoreo"/></jsp:include>
 
 <header class="mon-head">
     <h1>Panel de monitoreo de disponibilidad</h1>
-    <p>Insumos bajo el minimo y estado del menu para decidir el reabastecimiento (HU9).</p>
+    <p>Insumos bajo el minimo y estado del menu para decidir el reabastecimiento.</p>
 </header>
 
 <main class="mon-main">

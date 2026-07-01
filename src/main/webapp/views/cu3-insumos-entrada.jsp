@@ -5,6 +5,9 @@
     List<Insumo> insumos = (List<Insumo>) request.getAttribute("insumos");
     String ctx = request.getContextPath();
     String rol = request.getParameter("rol");
+    if ((rol == null || rol.isEmpty()) && session.getAttribute("rol") != null) {
+        rol = (String) session.getAttribute("rol");
+    }
     String rolQs = (rol == null || rol.isEmpty()) ? "" : ("?rol=" + rol);
 
     String mensaje = (String) session.getAttribute("mensaje");
@@ -44,7 +47,7 @@
     </style>
 </head>
 <body>
-<jsp:include page="navbar.jsp"/>
+<jsp:include page="navbar.jsp"><jsp:param name="activo" value="inventario"/></jsp:include>
 
 <header class="inv-top">
     <div class="inv-top__brand">
@@ -101,22 +104,22 @@
     <div class="formularios">
         <section class="panel panel--form">
             <h2>Registrar entrada</h2>
-            <p class="panel__hint">Solo insumo y cantidad (HU21).</p>
+            <p class="panel__hint">Selecciona el insumo y la cantidad a ingresar.</p>
             <form method="post" action="<%= ctx %>/insumos<%= rolQs %>" class="form form--confirmable"
-                  data-entero="true" data-titulo="Confirmar entrada" data-confirmar="Registrar">
+                  data-entero="false" data-titulo="Confirmar entrada" data-confirmar="Registrar">
                 <input type="hidden" name="accion" value="registrar">
                 <label>Insumo
                     <select name="insumoId" required>
                         <option value="">-- Selecciona un insumo --</option>
                         <% if (insumos != null) {
                                for (Insumo insumo : insumos) { %>
-                            <option value="<%= insumo.getId() %>"><%= insumo.getNombre() %></option>
+                            <option value="<%= insumo.getId() %>" data-unidad="<%= insumo.getUnidad() %>"><%= insumo.getNombre() %></option>
                         <%     }
                            } %>
                     </select>
                 </label>
                 <label>Cantidad
-                    <input type="number" name="cantidad" step="1" min="1" required>
+                    <input type="number" name="cantidad" step="0.01" min="0.01" required>
                 </label>
                 <p class="form__error" aria-live="polite"></p>
                 <button type="submit" class="btn btn--ok">Registrar</button>
@@ -125,7 +128,7 @@
 
         <section class="panel panel--form">
             <h2>Reducir stock</h2>
-            <p class="panel__hint">Mermas, perdidas o desperdicios (HU5).</p>
+            <p class="panel__hint">Mermas, perdidas o desperdicios.</p>
             <form method="post" action="<%= ctx %>/insumos<%= rolQs %>" class="form form--confirmable"
                   data-entero="false" data-titulo="Confirmar reduccion" data-confirmar="Confirmar reduccion">
                 <input type="hidden" name="accion" value="reducir">
@@ -134,7 +137,7 @@
                         <option value="">-- Selecciona un insumo --</option>
                         <% if (insumos != null) {
                                for (Insumo insumo : insumos) { %>
-                            <option value="<%= insumo.getId() %>"><%= insumo.getNombre() %></option>
+                            <option value="<%= insumo.getId() %>" data-unidad="<%= insumo.getUnidad() %>"><%= insumo.getNombre() %></option>
                         <%     }
                            } %>
                     </select>

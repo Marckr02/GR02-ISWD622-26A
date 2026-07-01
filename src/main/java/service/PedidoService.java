@@ -1,9 +1,14 @@
 package service;
 
+import dao.InsumoDao;
 import dao.PedidoDao;
+import dao.PlatoDao;
 import model.EstadoPedido;
+import model.Insumo;
 import model.Pedido;
+import model.Plato;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -13,13 +18,21 @@ import java.util.List;
 public class PedidoService {
 
     private final PedidoDao pedidoDao;
+    private final PlatoDao platoDao;
+    private final InsumoDao insumoDao;
 
     public PedidoService() {
         this(new PedidoDao());
     }
 
     public PedidoService(PedidoDao pedidoDao) {
+        this(pedidoDao, new PlatoDao(), new InsumoDao());
+    }
+
+    public PedidoService(PedidoDao pedidoDao, PlatoDao platoDao, InsumoDao insumoDao) {
         this.pedidoDao = pedidoDao;
+        this.platoDao = platoDao;
+        this.insumoDao = insumoDao;
     }
 
     /** Pedidos de un estado concreto, usado para pintar cada columna del tablero. */
@@ -50,6 +63,7 @@ public class PedidoService {
         if (pedido == null) {
             throw new IllegalArgumentException("No existe el pedido " + pedidoId);
         }
+        validarStockParaPreparacion(pedido);
         pedido.setEstado(pedido.getEstado().siguiente());
         pedidoDao.actualizar(pedido);
         return pedido;
@@ -74,5 +88,36 @@ public class PedidoService {
         pedido.setEstado(pedido.getEstado().anterior());
         pedidoDao.actualizar(pedido);
         return pedido;
+    }
+
+    private void validarStockParaPreparacion(Pedido pedido) {
+        if (pedido.getEstado() != EstadoPedido.RECIBIDO || pedido.getPlatoId() <= 0) {
+            return;
+        }
+        Plato plato = platoDao.buscarPorId(pedido.getPlatoId());
+        if (plato == null) {
+            return;
+        }
+        List<String> faltantes = new ArrayList<>();
+        for (int insumoId : plato.getInsumoIds()) {
+            Insumo insumo = insumoDao.buscarPorId(insumoId);
+            if (insumo == null) {
+                faltantes.add("insumo #" + insumoId);
+            } else if (insumo.getStock() < 1) {
+                faltantes.add(insumo.getNombre() + " (disponible: "
+                        + formatear(insumo.getStock()) + " " + insumo.getUnidad()
+                        + ", requerido: 1 " + insumo.getUnidad() + ")");
+            }
+        }
+        if (!faltantes.isEmpty()) {
+            throw new StockInsuficienteException(plato.getNombre(), faltantes);
+        }
+    }
+
+    private String formatear(double valor) {
+        if (valor == Math.rint(valor)) {
+            return String.valueOf((long) valor);
+        }
+        return String.format(java.util.Locale.US, "%.2f", valor);
     }
 }
