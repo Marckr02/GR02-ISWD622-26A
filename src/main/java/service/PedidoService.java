@@ -4,12 +4,15 @@ import dao.InsumoDao;
 import dao.PedidoDao;
 import dao.PlatoDao;
 import model.EstadoPedido;
+import model.IngredientePlato;
 import model.Insumo;
 import model.Pedido;
 import model.Plato;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Logica de negocio del tablero Kanban de pedidos: consulta por estado
@@ -20,6 +23,7 @@ public class PedidoService {
     private final PedidoDao pedidoDao;
     private final PlatoDao platoDao;
     private final InsumoDao insumoDao;
+    private final ConversionUnidades conversionUnidades;
 
     public PedidoService() {
         this(new PedidoDao());
@@ -33,6 +37,7 @@ public class PedidoService {
         this.pedidoDao = pedidoDao;
         this.platoDao = platoDao;
         this.insumoDao = insumoDao;
+        this.conversionUnidades = new ConversionUnidades();
     }
 
     /** Pedidos de un estado concreto, usado para pintar cada columna del tablero. */
@@ -91,11 +96,14 @@ public class PedidoService {
     }
 
     /**
-     * Valida el stock necesario para pasar el pedido a preparacion y, si es
-     * suficiente, descuenta automaticamente 1 unidad de cada insumo que
-     * compone el plato (HU: descuento de stock al iniciar preparacion).
-     * Si falta stock de uno o mas insumos no se descuenta nada y se lanza
-     * StockInsuficienteException con el detalle de lo que falta.
+     * Valida que haya stock suficiente para cada ingrediente de la receta
+     * del plato (convirtiendo la unidad de la receta a la unidad del insumo
+     * cuando es necesario) y, si alcanza, descuenta esa cantidad del
+     * inventario (HU30: "el sistema... descuente el inventario al
+     * prepararlo"). No hace nada si el pedido no esta en RECIBIDO o no
+     * tiene un plato asociado.
+     * @throws StockInsuficienteException si falta stock de algun ingrediente;
+     *         en ese caso no se descuenta nada.
      */
     private void validarYDescontarStockParaPreparacion(Pedido pedido) {
         if (pedido.getEstado() != EstadoPedido.RECIBIDO || pedido.getPlatoId() <= 0) {
@@ -106,26 +114,42 @@ public class PedidoService {
             return;
         }
         List<String> faltantes = new ArrayList<>();
-        List<Insumo> insumosADescontar = new ArrayList<>();
-        for (int insumoId : plato.getInsumoIds()) {
-            Insumo insumo = insumoDao.buscarPorId(insumoId);
+        Map<Insumo, Double> aDescontar = new LinkedHashMap<>();
+
+        for (IngredientePlato ingrediente : plato.getIngredientes()) {
+            Insumo insumo = insumoDao.buscarPorId(ingrediente.getInsumoId());
             if (insumo == null) {
-                faltantes.add("insumo #" + insumoId);
-            } else if (insumo.getStock() < 1) {
+                faltantes.add("insumo #" + ingrediente.getInsumoId());
+                continue;
+            }
+            double cantidadRequerida = convertirALaUnidadDelInsumo(ingrediente, insumo);
+            if (insumo.getStock() < cantidadRequerida) {
                 faltantes.add(insumo.getNombre() + " (disponible: "
                         + formatear(insumo.getStock()) + " " + insumo.getUnidad()
-                        + ", requerido: 1 " + insumo.getUnidad() + ")");
+                        + ", requerido: " + formatear(cantidadRequerida) + " " + insumo.getUnidad() + ")");
             } else {
-                insumosADescontar.add(insumo);
+                aDescontar.merge(insumo, cantidadRequerida, Double::sum);
             }
         }
+
         if (!faltantes.isEmpty()) {
             throw new StockInsuficienteException(plato.getNombre(), faltantes);
         }
-        for (Insumo insumo : insumosADescontar) {
-            insumo.setStock(insumo.getStock() - 1);
+
+        for (Map.Entry<Insumo, Double> entry : aDescontar.entrySet()) {
+            Insumo insumo = entry.getKey();
+            insumo.setStock(insumo.getStock() - entry.getValue());
             insumoDao.actualizar(insumo);
         }
+    }
+
+    /** Convierte la cantidad de la receta a la unidad en la que se almacena el insumo. */
+    private double convertirALaUnidadDelInsumo(IngredientePlato ingrediente, Insumo insumo) {
+        String unidadReceta = ingrediente.getUnidadReceta();
+        if (unidadReceta == null || unidadReceta.equals(insumo.getUnidad())) {
+            return ingrediente.getCantidad();
+        }
+        return conversionUnidades.convertir(ingrediente.getCantidad(), unidadReceta, insumo.getUnidad());
     }
 
     private String formatear(double valor) {
