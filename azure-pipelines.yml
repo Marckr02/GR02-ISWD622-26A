@@ -6,6 +6,9 @@
 trigger:
 - main
 
+pr:
+- main
+
 variables:
   azureSubscription: 'd51dc818-d1e2-4a90-9be0-4ba6711a7d9a'
   webAppName: 'GR02-ISWD622-26A'
