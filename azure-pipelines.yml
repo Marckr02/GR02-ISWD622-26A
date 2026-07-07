@@ -23,10 +23,10 @@ stages:
     - checkout: self
       fetchDepth: 0
 
-    - task: SonarCloudPrepare@1
+    - task: SonarQubePrepare@5
       displayName: 'Prepare Analysis Configuration'
       inputs:
-        SonarCloud: 'SonarQube Cloud'
+        SonarQube: 'SonarQube Cloud'
         organization: 'gr02'
         scannerMode: 'Maven'
         extraProperties: |
@@ -45,10 +45,10 @@ stages:
         testResultsFiles: '**/surefire-reports/TEST-*.xml'
         goals: 'clean package'
 
-    - task: SonarCloudAnalyze@1
+    - task: SonarQubeAnalyze@5
       displayName: 'Run Code Analysis'
 
-    - task: SonarCloudPublish@1
+    - task: SonarQubePublish@5
       displayName: 'Publish Quality Gate Result'
 
     # 📊 Publicar resultados de cobertura JaCoCo
