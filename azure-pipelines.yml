@@ -25,7 +25,7 @@ stages:
       vmImage: $(vmImageName)
 
     steps:
-    - task: SonarQubePrepare@1
+    - task: SonarQubePrepare@5
       displayName: 'Prepare SonarQube Analysis'
       inputs:
         SonarQube: 'SonarQube'
@@ -46,7 +46,7 @@ stages:
         testResultsFiles: '**/surefire-reports/TEST-*.xml'
         goals: 'clean package'
 
-    - task: SonarQubeAnalyze@1
+    - task: SonarQubeAnalyze@5
       displayName: 'Run SonarQube Analysis'
       inputs:
         SonarQube: 'SonarQube'
