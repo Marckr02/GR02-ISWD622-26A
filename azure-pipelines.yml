@@ -14,6 +14,8 @@ variables:
   webAppName: 'GR02-ISWD622-26A'
   environmentName: 'GR02-ISWD622-26A'
   vmImageName: 'ubuntu-latest'
+  sonarHostUrl: 'https://sonarqube-gr02-26a.azurewebsites.net'
+  sonarToken: '$(SONAR_TOKEN)'
 
 stages:
 - stage: Build
@@ -25,17 +27,8 @@ stages:
       vmImage: $(vmImageName)
 
     steps:
-    - task: SonarQubePrepare@5
-      displayName: 'Prepare SonarQube Analysis'
-      inputs:
-        SonarQube: 'SonarQube'
-        scannerMode: 'Other'
-        extraProperties: |
-          sonar.jacoco.reportPaths=$(System.DefaultWorkingDirectory)/target/site/jacoco/jacoco.xml
-          sonar.java.coveragePlugin=jacoco
-
     - task: Maven@4
-      displayName: 'Maven Package'
+      displayName: 'Maven Test with JaCoCo'
       inputs:
         mavenPomFile: 'pom.xml'
         mavenOptions: '-Xmx3072m'
@@ -46,10 +39,17 @@ stages:
         testResultsFiles: '**/surefire-reports/TEST-*.xml'
         goals: 'clean package'
 
-    - task: SonarQubeAnalyze@5
+    - task: Bash@3
       displayName: 'Run SonarQube Analysis'
       inputs:
-        SonarQube: 'SonarQube'
+        targetType: 'inline'
+        script: |
+          mvn sonar:sonar \
+            -Dsonar.host.url=$(sonarHostUrl) \
+            -Dsonar.token=$(sonarToken) \
+            -Dsonar.java.binaries=target/classes \
+            -Dsonar.jacoco.reportPaths=target/jacoco.exec \
+            -Dsonar.coverage.jacoco.xmlReportsPaths=target/site/jacoco/jacoco.xml
 
     # 📊 Publicar resultados de cobertura JaCoCo
     - task: PublishCodeCoverageResults@1
