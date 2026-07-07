@@ -1,8 +1,12 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page import="model.Insumo" %>
+<%@ page import="model.Proveedor" %>
 <%
     List<Insumo> insumos = (List<Insumo>) request.getAttribute("insumos");
+    List<Proveedor> proveedores = (List<Proveedor>) request.getAttribute("proveedores");
+    Map<Integer, Proveedor> proveedorPorInsumo = (Map<Integer, Proveedor>) request.getAttribute("proveedorPorInsumo");
     String ctx = request.getContextPath();
     String rol = request.getParameter("rol");
     if ((rol == null || rol.isEmpty()) && session.getAttribute("rol") != null) {
@@ -36,14 +40,23 @@
             border: 1px solid var(--border); border-radius: var(--radius, 14px);
             box-shadow: var(--shadow); padding: 1.3rem 1.4rem;
         }
-        .modal h3 { margin: 0 0 .5rem; font-size: 1.1rem; }
+        .modal h3 { margin: 0 0 .2rem; font-size: 1.1rem; }
+        .modal p.hint { margin: 0 0 1rem; color: var(--muted); font-size: .82rem; }
+        .modal .form { gap: .7rem; }
         .modal__resumen {
             margin: .2rem 0 1.1rem; padding: .7rem .8rem;
             background: var(--surface-2); border-radius: 10px; font-size: .92rem;
         }
-        .modal__acciones { display: flex; gap: .6rem; justify-content: flex-end; }
+        .modal__acciones { display: flex; gap: .6rem; justify-content: flex-end; margin-top: .3rem; }
         .modal__acciones .btn { min-width: 96px; }
         .btn--ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn--mini {
+            background: transparent; border: 1px solid var(--border); color: var(--text);
+            border-radius: 8px; padding: .35rem .7rem; font-size: .78rem; font-weight: 600; cursor: pointer;
+        }
+        .btn--mini:hover { border-color: var(--ok); color: var(--ok); }
+        .proveedor-tag { font-size: .82rem; color: var(--muted); }
+        .proveedor-tag--asignado { color: var(--text); }
     </style>
 </head>
 <body>
@@ -81,19 +94,36 @@
                     <th>Unidad</th>
                     <th class="num">Stock</th>
                     <th class="num">Stock min.</th>
+                    <th>Proveedor</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 <% if (insumos == null || insumos.isEmpty()) { %>
-                    <tr><td colspan="5" class="vacio">Sin insumos registrados.</td></tr>
+                    <tr><td colspan="7" class="vacio">Sin insumos registrados.</td></tr>
                 <% } else {
-                       for (Insumo insumo : insumos) { %>
+                       for (Insumo insumo : insumos) {
+                           Proveedor proveedor = (proveedorPorInsumo == null) ? null : proveedorPorInsumo.get(insumo.getId()); %>
                     <tr>
                         <td><%= insumo.getId() %></td>
                         <td><%= insumo.getNombre() %></td>
                         <td><%= insumo.getUnidad() %></td>
                         <td class="num"><%= insumo.getStock() %></td>
                         <td class="num"><%= insumo.getStockMinimo() %></td>
+                        <td>
+                            <% if (proveedor != null) { %>
+                                <span class="proveedor-tag proveedor-tag--asignado"><%= proveedor.getNombre() %></span>
+                            <% } else { %>
+                                <span class="proveedor-tag">Sin proveedor</span>
+                            <% } %>
+                        </td>
+                        <td style="display:flex;gap:.4rem;flex-wrap:wrap;">
+                            <button type="button" class="btn--mini btn-asociar-proveedor"
+                                    data-id="<%= insumo.getId() %>" data-nombre="<%= insumo.getNombre() %>">Proveedor</button>
+                            <button type="button" class="btn--mini btn-editar-minimo"
+                                    data-id="<%= insumo.getId() %>" data-nombre="<%= insumo.getNombre() %>"
+                                    data-minimo="<%= insumo.getStockMinimo() %>">Nivel minimo</button>
+                        </td>
                     </tr>
                 <%     }
                    } %>
@@ -163,6 +193,83 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="modal-proveedor" role="dialog" aria-modal="true" aria-labelledby="modal-proveedor-titulo">
+    <div class="modal">
+        <h3 id="modal-proveedor-titulo">Asociar proveedor</h3>
+        <p class="hint" id="modal-proveedor-insumo"></p>
+        <form method="post" action="<%= ctx %>/insumos<%= rolQs %>" class="form">
+            <input type="hidden" name="accion" value="vincularProveedor">
+            <input type="hidden" name="insumoId" id="proveedor-insumo-id">
+            <label>Proveedor
+                <select name="proveedorId" id="proveedor-select" required>
+                    <option value="">-- Selecciona un proveedor --</option>
+                    <% if (proveedores != null) { for (Proveedor p : proveedores) { %>
+                        <option value="<%= p.getId() %>"><%= p.getNombre() %></option>
+                    <% } } %>
+                </select>
+            </label>
+            <% if (proveedores == null || proveedores.isEmpty()) { %>
+                <p class="panel__hint">Aun no hay proveedores registrados. Crea uno primero en la seccion Proveedores.</p>
+            <% } %>
+            <div class="modal__acciones">
+                <button type="button" class="btn btn--ghost" id="modal-proveedor-cancelar">Cancelar</button>
+                <button type="submit" class="btn btn--ok">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-minimo" role="dialog" aria-modal="true" aria-labelledby="modal-minimo-titulo">
+    <div class="modal">
+        <h3 id="modal-minimo-titulo">Nivel minimo de stock</h3>
+        <p class="hint" id="modal-minimo-insumo"></p>
+        <form method="post" action="<%= ctx %>/insumos<%= rolQs %>" class="form">
+            <input type="hidden" name="accion" value="actualizarMinimo">
+            <input type="hidden" name="insumoId" id="minimo-insumo-id">
+            <label>Nivel minimo
+                <input type="number" name="stockMinimo" id="minimo-valor" step="0.01" min="0" required>
+            </label>
+            <div class="modal__acciones">
+                <button type="button" class="btn btn--ghost" id="modal-minimo-cancelar">Cancelar</button>
+                <button type="submit" class="btn btn--ok">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script src="<%= ctx %>/resources/js/inventario.js"></script>
+<script>
+(function () {
+    "use strict";
+
+    function cablearModal(overlayId, abrirSelector, cancelarId, alAbrir) {
+        var overlay = document.getElementById(overlayId);
+        document.querySelectorAll(abrirSelector).forEach(function (boton) {
+            boton.addEventListener("click", function () {
+                alAbrir(boton);
+                overlay.style.display = "flex";
+            });
+        });
+        document.getElementById(cancelarId).addEventListener("click", function () {
+            overlay.style.display = "none";
+        });
+        overlay.addEventListener("click", function (e) {
+            if (e.target === overlay) { overlay.style.display = "none"; }
+        });
+    }
+
+    cablearModal("modal-proveedor", ".btn-asociar-proveedor", "modal-proveedor-cancelar", function (boton) {
+        document.getElementById("proveedor-insumo-id").value = boton.getAttribute("data-id");
+        document.getElementById("modal-proveedor-insumo").textContent = "Insumo: " + boton.getAttribute("data-nombre");
+        document.getElementById("proveedor-select").value = "";
+    });
+
+    cablearModal("modal-minimo", ".btn-editar-minimo", "modal-minimo-cancelar", function (boton) {
+        document.getElementById("minimo-insumo-id").value = boton.getAttribute("data-id");
+        document.getElementById("modal-minimo-insumo").textContent = "Insumo: " + boton.getAttribute("data-nombre");
+        document.getElementById("minimo-valor").value = boton.getAttribute("data-minimo");
+    });
+})();
+</script>
 </body>
 </html>
