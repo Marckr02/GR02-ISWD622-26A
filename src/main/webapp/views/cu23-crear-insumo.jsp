@@ -23,6 +23,30 @@
     <title>Crear insumo | Dark Kitchen</title>
     <link rel="stylesheet" href="<%= ctx %>/resources/css/inventario.css">
     <link rel="stylesheet" href="<%= ctx %>/resources/css/main.css">
+    <style>
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 50;
+            background: rgba(2, 6, 12, .6);
+            align-items: center; justify-content: center; padding: 1rem;
+        }
+        .modal {
+            width: 100%; max-width: 380px;
+            background: var(--surface); color: var(--text);
+            border: 1px solid var(--border); border-radius: var(--radius, 14px);
+            box-shadow: var(--shadow); padding: 1.3rem 1.4rem;
+        }
+        .modal h3 { margin: 0 0 .2rem; font-size: 1.1rem; }
+        .modal p.hint { margin: 0 0 1rem; color: var(--muted); font-size: .82rem; }
+        .modal .form { gap: .7rem; }
+        .modal__acciones { display: flex; gap: .6rem; justify-content: flex-end; margin-top: .3rem; }
+        .modal__acciones .btn { min-width: 96px; }
+        .btn--ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn--editar {
+            background: transparent; border: 1px solid var(--border); color: var(--text);
+            border-radius: 8px; padding: .4rem .8rem; font-size: .82rem; font-weight: 600; cursor: pointer;
+        }
+        .btn--editar:hover { border-color: var(--ok); color: var(--ok); }
+    </style>
 </head>
 <body>
 <jsp:include page="navbar.jsp"><jsp:param name="activo" value="crear"/></jsp:include>
@@ -87,26 +111,17 @@
                 <% } else {
                        for (Insumo insumo : insumos) { %>
                     <tr>
-                        <td>
-                            <%= insumo.getId() %>
-                            <form id="editar-<%= insumo.getId() %>" method="post" action="<%= ctx %>/insumos/crear<%= rolQs %>">
-                                <input type="hidden" name="accion" value="editar">
-                                <input type="hidden" name="insumoId" value="<%= insumo.getId() %>">
-                            </form>
-                        </td>
-                        <td>
-                            <input form="editar-<%= insumo.getId() %>" type="text" name="nombre" value="<%= insumo.getNombre() %>" maxlength="100" required>
-                        </td>
-                        <td>
-                            <select form="editar-<%= insumo.getId() %>" name="unidad" required>
-                                <option value="kg" <%= "kg".equals(insumo.getUnidad()) ? "selected" : "" %>>kg</option>
-                                <option value="l" <%= "l".equals(insumo.getUnidad()) ? "selected" : "" %>>l</option>
-                                <option value="unidades" <%= "unidades".equals(insumo.getUnidad()) ? "selected" : "" %>>unidades</option>
-                            </select>
-                        </td>
+                        <td><%= insumo.getId() %></td>
+                        <td><%= insumo.getNombre() %></td>
+                        <td><%= insumo.getUnidad() %></td>
                         <td class="num"><%= insumo.getStock() %></td>
                         <td class="num"><%= insumo.getStockMinimo() %></td>
-                        <td><button form="editar-<%= insumo.getId() %>" type="submit" class="btn btn--ok">Actualizar</button></td>
+                        <td>
+                            <button type="button" class="btn--editar"
+                                    data-id="<%= insumo.getId() %>"
+                                    data-nombre="<%= insumo.getNombre() %>"
+                                    data-unidad="<%= insumo.getUnidad() %>">Editar</button>
+                        </td>
                     </tr>
                 <%     }
                    } %>
@@ -114,5 +129,57 @@
         </table>
     </section>
 </main>
+
+<div class="modal-overlay" id="modal-editar" role="dialog" aria-modal="true" aria-labelledby="modal-editar-titulo">
+    <div class="modal">
+        <h3 id="modal-editar-titulo">Editar insumo</h3>
+        <p class="hint">Actualiza el nombre o la unidad de medida.</p>
+        <form method="post" action="<%= ctx %>/insumos/crear<%= rolQs %>" class="form" id="form-editar-insumo">
+            <input type="hidden" name="accion" value="editar">
+            <input type="hidden" name="insumoId" id="editar-id">
+            <label>Nombre
+                <input type="text" name="nombre" id="editar-nombre" maxlength="100" required>
+            </label>
+            <label>Unidad
+                <select name="unidad" id="editar-unidad" required>
+                    <option value="kg">kg</option>
+                    <option value="l">l</option>
+                    <option value="unidades">unidades</option>
+                </select>
+            </label>
+            <div class="modal__acciones">
+                <button type="button" class="btn btn--ghost" id="modal-editar-cancelar">Cancelar</button>
+                <button type="submit" class="btn btn--ok">Guardar cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    "use strict";
+    var overlay = document.getElementById("modal-editar");
+    var campoId = document.getElementById("editar-id");
+    var campoNombre = document.getElementById("editar-nombre");
+    var campoUnidad = document.getElementById("editar-unidad");
+
+    document.querySelectorAll(".btn--editar").forEach(function (boton) {
+        boton.addEventListener("click", function () {
+            campoId.value = boton.getAttribute("data-id");
+            campoNombre.value = boton.getAttribute("data-nombre");
+            campoUnidad.value = boton.getAttribute("data-unidad");
+            overlay.style.display = "flex";
+            campoNombre.focus();
+        });
+    });
+
+    function cerrar() { overlay.style.display = "none"; }
+
+    document.getElementById("modal-editar-cancelar").addEventListener("click", cerrar);
+    overlay.addEventListener("click", function (e) {
+        if (e.target === overlay) { cerrar(); }
+    });
+})();
+</script>
 </body>
 </html>
