@@ -17,17 +17,20 @@ import java.util.Set;
 /**
  * Control de acceso por rol. Cada seccion sensible solo admite los roles que
  * le corresponden:
- *   - Inventario (ver, registrar entrada, reducir stock) y creacion de insumos:
- *     unicamente ADMIN_BODEGA.
- *   - Menu y panel de monitoreo: ADMIN_BODEGA.
+ *   - Inventario (ver, registrar entrada, reducir stock, editar, vincular
+ *     proveedor), creacion de insumos, menu, panel de monitoreo y
+ *     proveedores: unicamente ADMIN_BODEGA.
  *   - Consulta de disponibilidad del cocinero: COCINERO.
- * El tablero (/pedidos) queda abierto como pantalla de inicio; el rol
- * ADMINISTRADOR no tiene secciones asignadas por ahora.
+ *   - Restaurantes, platos y el historial de alertas: unicamente ADMINISTRADOR.
+ * El tablero (/pedidos) queda abierto como pantalla de inicio.
  *
  * El rol vigente se toma del parametro "rol" o del atributo de sesion "rol"
  * (el sistema no implementa login real).
  */
-@WebFilter(urlPatterns = {"/insumos", "/insumos/crear", "/menu", "/monitoreo", "/disponibilidad"})
+@WebFilter(urlPatterns = {
+        "/insumos", "/insumos/crear", "/menu", "/monitoreo", "/disponibilidad",
+        "/proveedores", "/restaurantes", "/platos", "/alertas"
+})
 public class AuthFilter implements Filter {
 
     @Override
@@ -53,14 +56,20 @@ public class AuthFilter implements Filter {
         }
         Set<Rol> permitidos;
         switch (ruta) {
-            case "/insumos":        // ver inventario, registrar entrada y reducir stock
+            case "/insumos":        // ver inventario, registrar entrada, reducir stock, editar, vincular proveedor
             case "/insumos/crear":  // alta de insumos
             case "/menu":           // menu y disponibilidad general
             case "/monitoreo":      // panel de monitoreo
+            case "/proveedores":    // gestion de proveedores
                 permitidos = EnumSet.of(Rol.ADMIN_BODEGA);
                 break;
             case "/disponibilidad": // vista del cocinero
                 permitidos = EnumSet.of(Rol.COCINERO);
+                break;
+            case "/restaurantes":   // gestion de restaurantes
+            case "/platos":         // gestion de platos y recetas
+            case "/alertas":        // historial de alertas de stock critico
+                permitidos = EnumSet.of(Rol.ADMINISTRADOR);
                 break;
             default:
                 permitidos = EnumSet.allOf(Rol.class);
