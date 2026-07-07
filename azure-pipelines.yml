@@ -25,6 +25,15 @@ stages:
       vmImage: $(vmImageName)
 
     steps:
+    - task: SonarQubePrepare@1
+      displayName: 'Prepare SonarQube Analysis'
+      inputs:
+        SonarQube: 'SonarQube'
+        scannerMode: 'Other'
+        extraProperties: |
+          sonar.jacoco.reportPaths=$(System.DefaultWorkingDirectory)/target/site/jacoco/jacoco.xml
+          sonar.java.coveragePlugin=jacoco
+
     - task: Maven@4
       displayName: 'Maven Package'
       inputs:
@@ -36,6 +45,11 @@ stages:
         publishJUnitResults: true
         testResultsFiles: '**/surefire-reports/TEST-*.xml'
         goals: 'clean package'
+
+    - task: SonarQubeAnalyze@1
+      displayName: 'Run SonarQube Analysis'
+      inputs:
+        SonarQube: 'SonarQube'
 
     # 📊 Publicar resultados de cobertura JaCoCo
     - task: PublishCodeCoverageResults@1
