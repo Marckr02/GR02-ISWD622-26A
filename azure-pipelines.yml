@@ -23,12 +23,12 @@ stages:
     - checkout: self
       fetchDepth: 0
 
-    - task: SonarQubePrepare@4
+    - task: SonarCloudPrepare@4
       displayName: 'Prepare Analysis Configuration'
       inputs:
-        SonarQube: 'SonarQube Cloud'
+        SonarCloud: 'SonarQubeCloud'      
         organization: 'gr02'
-        scannerMode: 'Maven'
+        scannerMode: 'other'
         extraProperties: |
           sonar.projectKey=GR02_GR02-ISWD622-26A.git
           sonar.projectName=GR02-ISWD622-26A.git
@@ -44,14 +44,13 @@ stages:
         publishJUnitResults: true
         testResultsFiles: '**/surefire-reports/TEST-*.xml'
         goals: 'clean package'
+        sonarQubeRunAnalysis: true        
 
-    - task: SonarQubeAnalyze@4
-      displayName: 'Run Code Analysis'
-
-    - task: SonarQubePublish@4
+    - task: SonarCloudPublish@4
       displayName: 'Publish Quality Gate Result'
+      inputs:
+        pollingTimeoutSec: '300'
 
-    # 📊 Publicar resultados de cobertura JaCoCo
     - task: PublishCodeCoverageResults@1
       displayName: 'Publish Code Coverage Results'
       inputs:
