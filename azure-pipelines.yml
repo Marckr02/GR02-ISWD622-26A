@@ -37,6 +37,15 @@ stages:
         testResultsFiles: '**/surefire-reports/TEST-*.xml'
         goals: 'clean package'
 
+    # 📊 Publicar resultados de cobertura JaCoCo
+    - task: PublishCodeCoverageResults@1
+      displayName: 'Publish Code Coverage Results'
+      inputs:
+        codeCoverageTool: 'JaCoCo'
+        summaryFileLocation: '$(System.DefaultWorkingDirectory)/target/site/jacoco/jacoco.xml'
+        reportDirectory: '$(System.DefaultWorkingDirectory)/target/site/jacoco'
+        failIfCoverageEmpty: true
+
     - task: CopyFiles@2
       displayName: 'Copy Files to artifact staging directory'
       inputs:
