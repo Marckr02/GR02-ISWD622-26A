@@ -45,6 +45,55 @@ public class InsumoService {
     }
 
     /**
+     * Igual que {@link #listarInsumosCriticos()} pero ademas registra una
+     * alerta en el historial por cada insumo critico detectado (HU11/F3.3).
+     * Se ofrece como sobrecarga independiente para no acoplar el
+     * constructor de InsumoService al historial de alertas.
+     */
+    public List<Insumo> listarInsumosCriticos(AlertaStockService alertaStockService) {
+        List<Insumo> criticos = listarInsumosCriticos();
+        if (alertaStockService != null) {
+            for (Insumo insumo : criticos) {
+                alertaStockService.registrarAlerta(insumo);
+            }
+        }
+        return criticos;
+    }
+
+    /**
+     * Actualiza el nivel minimo de stock de un insumo (HU34), usado por el
+     * panel de monitoreo para calcular cuando esta en nivel critico.
+     * @throws IllegalArgumentException si el insumo no existe o el valor no
+     *         es un numero igual o mayor a cero.
+     */
+    public Insumo actualizarStockMinimo(int insumoId, String stockMinimoTexto) {
+        Insumo insumo = insumoDao.buscarPorId(insumoId);
+        if (insumo == null) {
+            throw new IllegalArgumentException("El insumo indicado no existe en el sistema");
+        }
+        double valor = parsearStockMinimo(stockMinimoTexto);
+        insumo.setStockMinimo(valor);
+        insumoDao.actualizar(insumo);
+        return insumo;
+    }
+
+    private double parsearStockMinimo(String stockMinimoTexto) {
+        if (stockMinimoTexto == null || stockMinimoTexto.trim().isEmpty()) {
+            throw new IllegalArgumentException("El nivel minimo debe ser un numero igual o mayor a cero");
+        }
+        double valor;
+        try {
+            valor = Double.parseDouble(stockMinimoTexto.trim());
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("El nivel minimo debe ser un numero igual o mayor a cero");
+        }
+        if (valor < 0) {
+            throw new IllegalArgumentException("El nivel minimo debe ser un numero igual o mayor a cero");
+        }
+        return valor;
+    }
+
+    /**
      * Reduce el stock de un insumo. La cantidad debe ser positiva y no puede
      * superar el stock disponible.
      */

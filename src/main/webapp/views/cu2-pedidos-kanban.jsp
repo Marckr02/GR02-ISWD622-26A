@@ -63,9 +63,9 @@
 
 <% if (rol == Rol.ADMINISTRADOR) { %>
     <section class="sin-seccion">
-        <div style="font-size:2.2rem;line-height:1;">&#9788;</div>
-        <h2>Sin secciones asignadas</h2>
-        <p>El perfil de administrador aun no tiene vistas habilitadas. Cambia de vista desde la barra superior.</p>
+        <div style="font-size:2.2rem;line-height:1;">&#127869;</div>
+        <h2>El tablero no aplica a tu rol</h2>
+        <p>Usa las pestanas de arriba para gestionar restaurantes, platos o el historial de alertas.</p>
     </section>
 <% } else { %>
 
