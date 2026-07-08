@@ -82,8 +82,13 @@ public class InsumoEntradaServlet extends HttpServlet {
             } else if ("vincularProveedor".equals(accion)) {
                 int insumoId = parsearInsumo(request.getParameter("insumoId"));
                 int proveedorId = Integer.parseInt(request.getParameter("proveedorId"));
-                proveedorService.vincularAInsumo(insumoId, proveedorId);
-                request.getSession().setAttribute("mensaje", "Proveedor asociado correctamente");
+                if (proveedorId <= 0) {
+                    proveedorService.desvincularDeInsumo(insumoId);
+                    request.getSession().setAttribute("mensaje", "Insumo sin proveedor asignado");
+                } else {
+                    proveedorService.vincularAInsumo(insumoId, proveedorId);
+                    request.getSession().setAttribute("mensaje", "Proveedor asociado correctamente");
+                }
             }
         } catch (NumberFormatException ex) {
             String mensaje = "vincularProveedor".equals(accion)

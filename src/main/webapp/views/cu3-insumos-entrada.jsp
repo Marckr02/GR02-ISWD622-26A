@@ -19,6 +19,15 @@
     String error = (String) session.getAttribute("error");
     if (error != null) { session.removeAttribute("error"); }
 %>
+<%!
+    /** Numero legible: entero para "unidades", 2 decimales para el resto (evita ruido de punto flotante). */
+    private String formatearCantidad(double valor, String unidad) {
+        if ("unidades".equals(unidad)) {
+            return String.valueOf(Math.round(valor));
+        }
+        return String.format(java.util.Locale.US, "%.2f", valor);
+    }
+%>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -86,10 +95,18 @@
 <main class="inv-main">
     <section class="panel panel--tabla">
         <h2>Stock actual</h2>
+        <div class="buscador">
+            <input type="text" id="filtro-insumo" class="input-filtro"
+                   placeholder="Buscar insumo por nombre..." aria-label="Buscar insumo">
+        </div>
+        <p class="leyenda-stock">
+            <span class="leyenda-item"><span class="status-dot status-dot--rojo"></span>Sin stock</span>
+            <span class="leyenda-item"><span class="status-dot status-dot--amarillo"></span>Bajo el minimo</span>
+            <span class="leyenda-item"><span class="status-dot status-dot--verde"></span>Nivel optimo</span>
+        </p>
         <table class="tabla">
             <thead>
                 <tr>
-                    <th>#</th>
                     <th>Insumo</th>
                     <th>Unidad</th>
                     <th class="num">Stock</th>
@@ -100,16 +117,19 @@
             </thead>
             <tbody>
                 <% if (insumos == null || insumos.isEmpty()) { %>
-                    <tr><td colspan="7" class="vacio">Sin insumos registrados.</td></tr>
+                    <tr><td colspan="6" class="vacio">Sin insumos registrados.</td></tr>
                 <% } else {
                        for (Insumo insumo : insumos) {
-                           Proveedor proveedor = (proveedorPorInsumo == null) ? null : proveedorPorInsumo.get(insumo.getId()); %>
+                           Proveedor proveedor = (proveedorPorInsumo == null) ? null : proveedorPorInsumo.get(insumo.getId());
+                           String estado = insumo.getStock() <= 0 ? "rojo"
+                                   : (insumo.getStock() < insumo.getStockMinimo() ? "amarillo" : "verde"); %>
                     <tr>
-                        <td><%= insumo.getId() %></td>
                         <td><%= insumo.getNombre() %></td>
                         <td><%= insumo.getUnidad() %></td>
-                        <td class="num"><%= insumo.getStock() %></td>
-                        <td class="num"><%= insumo.getStockMinimo() %></td>
+                        <td class="num">
+                            <span class="status-dot status-dot--<%= estado %>"></span><%= formatearCantidad(insumo.getStock(), insumo.getUnidad()) %>
+                        </td>
+                        <td class="num"><%= formatearCantidad(insumo.getStockMinimo(), insumo.getUnidad()) %></td>
                         <td>
                             <% if (proveedor != null) { %>
                                 <span class="proveedor-tag proveedor-tag--asignado"><%= proveedor.getNombre() %></span>
@@ -119,7 +139,8 @@
                         </td>
                         <td style="display:flex;gap:.4rem;flex-wrap:wrap;">
                             <button type="button" class="btn--mini btn-asociar-proveedor"
-                                    data-id="<%= insumo.getId() %>" data-nombre="<%= insumo.getNombre() %>">Proveedor</button>
+                                    data-id="<%= insumo.getId() %>" data-nombre="<%= insumo.getNombre() %>"
+                                    data-proveedor-id="<%= proveedor != null ? proveedor.getId() : 0 %>">Proveedor</button>
                             <button type="button" class="btn--mini btn-editar-minimo"
                                     data-id="<%= insumo.getId() %>" data-nombre="<%= insumo.getNombre() %>"
                                     data-minimo="<%= insumo.getStockMinimo() %>">Nivel minimo</button>
@@ -139,7 +160,7 @@
                   data-entero="false" data-titulo="Confirmar entrada" data-confirmar="Registrar">
                 <input type="hidden" name="accion" value="registrar">
                 <label>Insumo
-                    <select name="insumoId" required>
+                    <select name="insumoId" required autofocus>
                         <option value="">-- Selecciona un insumo --</option>
                         <% if (insumos != null) {
                                for (Insumo insumo : insumos) { %>
@@ -148,7 +169,7 @@
                            } %>
                     </select>
                 </label>
-                <label>Cantidad
+                <label>Cantidad <span class="unidad-hint"></span>
                     <input type="number" name="cantidad" step="0.01" min="0.01" required>
                 </label>
                 <p class="form__error" aria-live="polite"></p>
@@ -167,14 +188,15 @@
                         <option value="">-- Selecciona un insumo --</option>
                         <% if (insumos != null) {
                                for (Insumo insumo : insumos) { %>
-                            <option value="<%= insumo.getId() %>" data-unidad="<%= insumo.getUnidad() %>"><%= insumo.getNombre() %></option>
+                            <option value="<%= insumo.getId() %>" data-unidad="<%= insumo.getUnidad() %>" data-stock="<%= insumo.getStock() %>"><%= insumo.getNombre() %></option>
                         <%     }
                            } %>
                     </select>
                 </label>
-                <label>Cantidad a reducir
+                <label>Cantidad a reducir <span class="unidad-hint"></span>
                     <input type="number" name="cantidad" step="0.01" min="0.01" required>
                 </label>
+                <p class="panel__hint stock-disponible-hint"></p>
                 <p class="form__error" aria-live="polite"></p>
                 <button type="submit" class="btn btn--warn">Reducir stock</button>
             </form>
@@ -195,14 +217,15 @@
 
 <div class="modal-overlay" id="modal-proveedor" role="dialog" aria-modal="true" aria-labelledby="modal-proveedor-titulo">
     <div class="modal">
-        <h3 id="modal-proveedor-titulo">Asociar proveedor</h3>
+        <h3 id="modal-proveedor-titulo">Proveedor del insumo</h3>
         <p class="hint" id="modal-proveedor-insumo"></p>
+        <p class="hint">Elige "Sin proveedor" para quitar el proveedor asignado.</p>
         <form method="post" action="<%= ctx %>/insumos<%= rolQs %>" class="form">
             <input type="hidden" name="accion" value="vincularProveedor">
             <input type="hidden" name="insumoId" id="proveedor-insumo-id">
             <label>Proveedor
                 <select name="proveedorId" id="proveedor-select" required>
-                    <option value="">-- Selecciona un proveedor --</option>
+                    <option value="0">Sin proveedor</option>
                     <% if (proveedores != null) { for (Proveedor p : proveedores) { %>
                         <option value="<%= p.getId() %>"><%= p.getNombre() %></option>
                     <% } } %>
@@ -261,7 +284,7 @@
     cablearModal("modal-proveedor", ".btn-asociar-proveedor", "modal-proveedor-cancelar", function (boton) {
         document.getElementById("proveedor-insumo-id").value = boton.getAttribute("data-id");
         document.getElementById("modal-proveedor-insumo").textContent = "Insumo: " + boton.getAttribute("data-nombre");
-        document.getElementById("proveedor-select").value = "";
+        document.getElementById("proveedor-select").value = boton.getAttribute("data-proveedor-id") || "0";
     });
 
     cablearModal("modal-minimo", ".btn-editar-minimo", "modal-minimo-cancelar", function (boton) {

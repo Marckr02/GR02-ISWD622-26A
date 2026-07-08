@@ -105,11 +105,11 @@ public class InsumoService {
         if (insumo == null) {
             throw new IllegalArgumentException("No existe el insumo " + insumoId);
         }
-        if (cantidad > insumo.getStock()) {
+        if (Numeros.redondear(cantidad) > Numeros.redondear(insumo.getStock())) {
             throw new IllegalArgumentException(
                     "La cantidad a reducir excede el stock disponible");
         }
-        insumo.setStock(insumo.getStock() - cantidad);
+        insumo.setStock(Numeros.redondear(insumo.getStock() - cantidad));
         insumoDao.actualizar(insumo);
         return insumo;
     }
@@ -143,7 +143,7 @@ public class InsumoService {
 
     /** Incrementa el stock del insumo con la cantidad recibida. */
     public void sumarStock(Insumo insumo, double cantidad) {
-        insumo.setStock(insumo.getStock() + cantidad);
+        insumo.setStock(Numeros.redondear(insumo.getStock() + cantidad));
     }
 
     /**
@@ -171,7 +171,7 @@ public class InsumoService {
             throw new IllegalArgumentException(
                     "La unidad seleccionada no coincide con la unidad actual del insumo");
         }
-        insumo.setStock(insumo.getStock() + cantidad);
+        insumo.setStock(Numeros.redondear(insumo.getStock() + cantidad));
         insumoDao.actualizar(insumo);
         return insumo;
     }

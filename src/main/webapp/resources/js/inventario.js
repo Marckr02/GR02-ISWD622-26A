@@ -28,7 +28,27 @@
         return { ok: true };
     }
 
+    /** Filtro en tiempo real: compara lo escrito contra la primera celda (columna Insumo) de cada fila. */
+    function activarFiltroTabla(inputId, tablaSelector) {
+        var input = document.getElementById(inputId);
+        var tabla = document.querySelector(tablaSelector);
+        if (!input || !tabla) {
+            return;
+        }
+        input.addEventListener("input", function () {
+            var consulta = input.value.trim().toLowerCase();
+            var filas = tabla.querySelectorAll("tbody tr");
+            Array.prototype.forEach.call(filas, function (fila) {
+                var primeraCelda = fila.querySelector("td:first-child");
+                var nombreInsumo = primeraCelda ? primeraCelda.textContent.toLowerCase() : "";
+                fila.style.display = (consulta === "" || nombreInsumo.indexOf(consulta) !== -1) ? "" : "none";
+            });
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
+        activarFiltroTabla("filtro-insumo", ".tabla");
+
         var overlay = document.getElementById("modal-confirm");
         var resumen = document.getElementById("modal-resumen");
         var titulo = document.getElementById("modal-titulo");
@@ -47,15 +67,27 @@
             var cantidad = form.querySelector("input[name='cantidad']");
             var unidad = form.querySelector("select[name='unidad']");
             var errorBox = form.querySelector(".form__error");
+            var pistaUnidad = form.querySelector(".unidad-hint");
+            var pistaStock = form.querySelector(".stock-disponible-hint");
             var soloEntero = form.getAttribute("data-entero") === "true";
 
             function sincronizarUnidad() {
-                if (!select || !unidad || select.selectedIndex < 0) {
+                if (!select || select.selectedIndex < 0) {
                     return;
                 }
-                var unidadActual = select.options[select.selectedIndex].getAttribute("data-unidad");
-                if (unidadActual) {
+                var opcion = select.options[select.selectedIndex];
+                var unidadActual = opcion.getAttribute("data-unidad");
+                if (unidad && unidadActual) {
                     unidad.value = unidadActual;
+                }
+                if (pistaUnidad) {
+                    pistaUnidad.textContent = (unidadActual && opcion.value) ? "(" + unidadActual + ")" : "";
+                }
+                if (pistaStock) {
+                    var stockDisponible = opcion.getAttribute("data-stock");
+                    pistaStock.textContent = (stockDisponible && opcion.value)
+                        ? "Stock disponible: " + Number(stockDisponible) + " " + unidadActual
+                        : "";
                 }
             }
 
@@ -69,7 +101,7 @@
                 return select.options[select.selectedIndex].getAttribute("data-unidad") || "";
             }
 
-            if (select && unidad) {
+            if (select) {
                 select.addEventListener("change", sincronizarUnidad);
                 sincronizarUnidad();
             }
@@ -87,6 +119,14 @@
                 }
                 if (unidadSeleccionada() === "unidades" && !/^\d+$/.test(cantidad.value.trim())) {
                     if (errorBox) { errorBox.textContent = "La cantidad en unidades debe ser un numero entero"; }
+                    return;
+                }
+                var stockDisponible = select.options[select.selectedIndex].getAttribute("data-stock");
+                if (stockDisponible !== null && Number(cantidad.value) > Number(stockDisponible)) {
+                    if (errorBox) {
+                        errorBox.textContent = "La cantidad a reducir excede el stock disponible ("
+                            + Number(stockDisponible) + " " + unidadSeleccionada() + ")";
+                    }
                     return;
                 }
                 if (errorBox) { errorBox.textContent = ""; }

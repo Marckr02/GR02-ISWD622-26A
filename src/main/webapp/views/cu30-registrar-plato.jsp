@@ -116,6 +116,7 @@
                 </div>
 
                 <button type="button" id="receta-agregar" class="receta__agregar">+ Agregar insumo</button>
+                <p class="form__error" aria-live="polite"></p>
             </div>
 
             <div class="form__actions">
