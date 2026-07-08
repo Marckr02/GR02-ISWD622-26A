@@ -123,7 +123,7 @@ public class PedidoService {
                 continue;
             }
             double cantidadRequerida = convertirALaUnidadDelInsumo(ingrediente, insumo);
-            if (insumo.getStock() < cantidadRequerida) {
+            if (Numeros.redondear(insumo.getStock()) < Numeros.redondear(cantidadRequerida)) {
                 faltantes.add(insumo.getNombre() + " (disponible: "
                         + formatear(insumo.getStock()) + " " + insumo.getUnidad()
                         + ", requerido: " + formatear(cantidadRequerida) + " " + insumo.getUnidad() + ")");
@@ -138,7 +138,7 @@ public class PedidoService {
 
         for (Map.Entry<Insumo, Double> entry : aDescontar.entrySet()) {
             Insumo insumo = entry.getKey();
-            insumo.setStock(insumo.getStock() - entry.getValue());
+            insumo.setStock(Numeros.redondear(insumo.getStock() - entry.getValue()));
             insumoDao.actualizar(insumo);
         }
     }

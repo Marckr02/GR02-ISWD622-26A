@@ -77,7 +77,8 @@ body {
     gap: 1.4rem;
 }
 .gestion-main--form {
-    grid-template-columns: minmax(0, 480px);
+    grid-template-columns: minmax(0, 720px);
+    justify-content: center;
 }
 
 .panel {
@@ -85,21 +86,31 @@ body {
     border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
-    padding: 1.3rem;
+    padding: 1.5rem 1.75rem;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
 }
 .panel h2 { margin: 0 0 1rem; font-size: 1.05rem; }
 .panel__hint { margin: -.6rem 0 1rem; color: var(--muted); font-size: .8rem; }
 
 /* ---------- Formularios ---------- */
-.form { display: grid; gap: .85rem; }
+.form { display: grid; gap: .85rem; width: 100%; min-width: 0; }
 .form label {
     display: grid;
     gap: .35rem;
     font-size: .82rem;
     color: var(--muted);
     font-weight: 600;
+    min-width: 0;
 }
 .form input, .form select, .form textarea {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -171,11 +182,13 @@ body {
 .receta { display: grid; gap: .6rem; }
 .receta__fila {
     display: grid;
-    grid-template-columns: 2fr 1fr .9fr auto;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, .9fr) auto;
     gap: .5rem;
     align-items: end;
 }
-.receta__fila label { margin: 0; }
+.receta__fila label { margin: 0; min-width: 0; }
+.receta__fila select,
+.receta__fila input { min-width: 0; }
 .receta__quitar {
     background: transparent;
     border: 1px solid var(--border);

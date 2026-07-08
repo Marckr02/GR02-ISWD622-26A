@@ -86,6 +86,18 @@ public class ProveedorService {
         return (proveedorId == null) ? null : proveedorDao.buscarPorId(proveedorId);
     }
 
+    /**
+     * Quita la vinculacion de proveedor de un insumo, dejandolo sin proveedor
+     * asignado (HU6: un insumo puede no tener proveedor).
+     * @throws IllegalArgumentException si el insumo no existe.
+     */
+    public void desvincularDeInsumo(int insumoId) {
+        if (insumoDao.buscarPorId(insumoId) == null) {
+            throw new IllegalArgumentException("El insumo indicado no existe en el sistema");
+        }
+        proveedorDao.desvincularInsumo(insumoId);
+    }
+
     private String validarNombre(String nombre, int idActual) {
         String limpio = (nombre == null) ? "" : nombre.trim();
         if (limpio.isEmpty()) {
