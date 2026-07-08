@@ -14,7 +14,7 @@
     List<String> visibles;
     switch (navRol) {
         case ADMIN_BODEGA:
-            visibles = Arrays.asList("tablero", "inventario", "crear", "menu", "monitoreo", "proveedores");
+            visibles = Arrays.asList("tablero", "inventario", "menu", "monitoreo", "proveedores");
             break;
         case ADMINISTRADOR:
             visibles = Arrays.asList("restaurantes", "platos", "alertas");

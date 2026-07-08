@@ -15,6 +15,15 @@
     String error = (String) session.getAttribute("error");
     if (error != null) { session.removeAttribute("error"); }
 %>
+<%!
+    /** Numero legible: entero para "unidades", 2 decimales para el resto (evita ruido de punto flotante). */
+    private String formatearCantidad(double valor, String unidad) {
+        if ("unidades".equals(unidad)) {
+            return String.valueOf(Math.round(valor));
+        }
+        return String.format(java.util.Locale.US, "%.2f", valor);
+    }
+%>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -55,7 +64,7 @@
     <div class="inv-top__brand">
         <span class="inv-top__dot"></span>
         <div>
-            <h1>Crear insumo</h1>
+            <h1>Crear / Editar insumo</h1>
             <p>Alta manual de un insumo con stock inicial en cero.</p>
         </div>
     </div>
@@ -73,12 +82,12 @@
 
 <main class="inv-main">
     <section class="panel panel--form">
-        <h2>Nuevo insumo</h2>
+        <h2>Crear / Editar insumo</h2>
         <p class="panel__hint">Entre 2 y 100 caracteres: letras, numeros, espacios y guiones.</p>
-        <form method="post" action="<%= ctx %>/insumos/crear<%= rolQs %>" class="form">
+        <form method="post" action="<%= ctx %>/insumos/crear<%= rolQs %>" class="form form--insumo">
             <input type="hidden" name="accion" value="crear">
             <label>Nombre
-                <input type="text" name="nombre" maxlength="100" required
+                <input type="text" name="nombre" maxlength="100" required autofocus
                        placeholder="Ej: Cilantro fresco">
             </label>
             <label>Unidad
@@ -94,10 +103,18 @@
 
     <section class="panel panel--tabla">
         <h2>Stock actual</h2>
+        <div class="buscador">
+            <input type="text" id="filtro-insumo" class="input-filtro"
+                   placeholder="Buscar insumo por nombre..." aria-label="Buscar insumo">
+        </div>
+        <p class="leyenda-stock">
+            <span class="leyenda-item"><span class="status-dot status-dot--rojo"></span>Sin stock</span>
+            <span class="leyenda-item"><span class="status-dot status-dot--amarillo"></span>Bajo el minimo</span>
+            <span class="leyenda-item"><span class="status-dot status-dot--verde"></span>Nivel optimo</span>
+        </p>
         <table class="tabla">
             <thead>
                 <tr>
-                    <th>#</th>
                     <th>Insumo</th>
                     <th>Unidad</th>
                     <th class="num">Stock</th>
@@ -107,15 +124,18 @@
             </thead>
             <tbody>
                 <% if (insumos == null || insumos.isEmpty()) { %>
-                    <tr><td colspan="6" class="vacio">Sin insumos registrados.</td></tr>
+                    <tr><td colspan="5" class="vacio">Sin insumos registrados.</td></tr>
                 <% } else {
-                       for (Insumo insumo : insumos) { %>
+                       for (Insumo insumo : insumos) {
+                           String estado = insumo.getStock() <= 0 ? "rojo"
+                                   : (insumo.getStock() < insumo.getStockMinimo() ? "amarillo" : "verde"); %>
                     <tr>
-                        <td><%= insumo.getId() %></td>
                         <td><%= insumo.getNombre() %></td>
                         <td><%= insumo.getUnidad() %></td>
-                        <td class="num"><%= insumo.getStock() %></td>
-                        <td class="num"><%= insumo.getStockMinimo() %></td>
+                        <td class="num">
+                            <span class="status-dot status-dot--<%= estado %>"></span><%= formatearCantidad(insumo.getStock(), insumo.getUnidad()) %>
+                        </td>
+                        <td class="num"><%= formatearCantidad(insumo.getStockMinimo(), insumo.getUnidad()) %></td>
                         <td>
                             <button type="button" class="btn--editar"
                                     data-id="<%= insumo.getId() %>"
@@ -134,7 +154,7 @@
     <div class="modal">
         <h3 id="modal-editar-titulo">Editar insumo</h3>
         <p class="hint">Actualiza el nombre o la unidad de medida.</p>
-        <form method="post" action="<%= ctx %>/insumos/crear<%= rolQs %>" class="form" id="form-editar-insumo">
+        <form method="post" action="<%= ctx %>/insumos/crear<%= rolQs %>" class="form form--insumo" id="form-editar-insumo">
             <input type="hidden" name="accion" value="editar">
             <input type="hidden" name="insumoId" id="editar-id">
             <label>Nombre
@@ -155,6 +175,7 @@
     </div>
 </div>
 
+<script src="<%= ctx %>/resources/js/inventario.js"></script>
 <script>
 (function () {
     "use strict";

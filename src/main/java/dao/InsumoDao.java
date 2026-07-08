@@ -59,9 +59,10 @@ public class InsumoDao {
                 .orElse(null);
     }
 
+    /** Listado ordenado alfabeticamente por nombre, para facilitar la busqueda visual en bodega. */
     public List<Insumo> listarTodos() {
         return ALMACEN.values().stream()
-                .sorted(Comparator.comparingInt(Insumo::getId))
+                .sorted(Comparator.comparing(Insumo::getNombre, String.CASE_INSENSITIVE_ORDER))
                 .collect(Collectors.toList());
     }
 

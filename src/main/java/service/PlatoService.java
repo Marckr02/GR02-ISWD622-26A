@@ -10,7 +10,9 @@ import model.Restaurante;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -25,6 +27,7 @@ public class PlatoService {
     private final PlatoDao platoDao;
     private final RestauranteDao restauranteDao;
     private final InsumoDao insumoDao;
+    private final ConversionUnidades conversionUnidades = new ConversionUnidades();
 
     public PlatoService() {
         this(new PlatoDao(), new RestauranteDao(), new InsumoDao());
@@ -135,6 +138,7 @@ public class PlatoService {
             throw new IllegalArgumentException("Debe agregar al menos un insumo con su cantidad y unidad");
         }
         List<IngredientePlato> limpios = new ArrayList<>();
+        Set<Integer> insumosUsados = new HashSet<>();
         for (IngredientePlato ingrediente : ingredientes) {
             if (ingrediente.getCantidad() <= 0) {
                 throw new IllegalArgumentException(
@@ -145,10 +149,24 @@ public class PlatoService {
             if (!UNIDADES_RECETA.contains(unidad)) {
                 throw new IllegalArgumentException("Seleccione una unidad valida para el ingrediente");
             }
-            if (insumoDao.buscarPorId(ingrediente.getInsumoId()) == null) {
+            Insumo insumo = insumoDao.buscarPorId(ingrediente.getInsumoId());
+            if (insumo == null) {
                 throw new IllegalArgumentException("Uno de los insumos seleccionados no existe en el sistema");
             }
-            limpios.add(new IngredientePlato(ingrediente.getInsumoId(), ingrediente.getCantidad(), unidad));
+            if (!insumosUsados.add(insumo.getId())) {
+                throw new IllegalArgumentException(
+                        "El insumo \"" + insumo.getNombre() + "\" esta repetido en la receta");
+            }
+            if (!unidad.equals(insumo.getUnidad())) {
+                try {
+                    conversionUnidades.convertir(ingrediente.getCantidad(), unidad, insumo.getUnidad());
+                } catch (IllegalArgumentException ex) {
+                    throw new IllegalArgumentException(
+                            "La unidad de \"" + insumo.getNombre() + "\" no es compatible con su unidad "
+                                    + "de almacenamiento en bodega (" + insumo.getUnidad() + ")");
+                }
+            }
+            limpios.add(new IngredientePlato(insumo.getId(), ingrediente.getCantidad(), unidad));
         }
         return limpios;
     }
