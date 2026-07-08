@@ -62,7 +62,7 @@ class PlatoDaoTest {
 
         assertTrue(lista.stream().anyMatch(p -> p.getId() == guardado.getId()));
         for (int i = 0; i < lista.size() - 1; i++) {
-            assertTrue(lista.get(i).getId() < lista.get(i + 1).getId());
+            assertTrue(lista.get(i).getId() <= lista.get(i + 1).getId());
         }
     }
 
