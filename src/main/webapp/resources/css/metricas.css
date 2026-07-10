@@ -1,0 +1,108 @@
+/*
+ * Vista de metricas por restaurante (F5.1/F5.2, HU35-HU39). Reutiliza los
+ * tokens y componentes de gestion.css/main.css (panel, tabla, toolbar,
+ * modal, toast); aqui solo se agregan las piezas propias: tarjetas de
+ * resumen, contenedores de grafico (Chart.js) y el resaltado de la fila
+ * mas/menos vendida o utilizada dentro de las tablas.
+ */
+
+.visually-hidden {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ---------- Tarjetas de resumen (total de pedidos) ---------- */
+.metricas-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.6rem;
+}
+.stat-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 1.3rem;
+}
+.stat-card__label {
+    margin: 0 0 .35rem;
+    color: var(--muted);
+    font-size: .74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+.stat-card__valor {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -.02em;
+}
+.stat-card__valor small { font-size: 1rem; color: var(--muted); font-weight: 600; }
+
+/* ---------- Bloque tabla + grafico ---------- */
+.metricas-seccion { margin-bottom: 2rem; }
+.metricas-seccion:last-child { margin-bottom: 0; }
+.metricas-seccion h2 {
+    margin: 0 0 1rem;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+}
+
+.metricas-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+    gap: 1.4rem;
+    align-items: start;
+}
+.metricas-chart {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    min-height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.metricas-chart canvas { max-width: 100%; }
+
+/* ---------- Resaltado de extremos en la tabla ---------- */
+.tabla tr.fila--top .badge-extremo { background: rgba(52, 211, 153, .16); color: var(--accent, #34d399); }
+.tabla tr.fila--bottom .badge-extremo { background: rgba(239, 68, 68, .12); color: var(--error); }
+.badge-extremo {
+    display: inline-block;
+    margin-left: .5rem;
+    padding: .12rem .5rem;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    vertical-align: middle;
+}
+.tabla tfoot td {
+    font-weight: 700;
+    border-top: 2px solid var(--border);
+    border-bottom: none;
+}
+
+/* ---------- Nota bajo la tabla truncada (Top 5) + boton "ver todos" ---------- */
+.metricas-nota {
+    margin: .6rem 0 .3rem;
+    color: var(--muted);
+    font-size: .82rem;
+}
+.metricas-nota strong { color: var(--text); }
+
+@media (max-width: 900px) {
+    .metricas-grid { grid-template-columns: minmax(0, 1fr); }
+}
