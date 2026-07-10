@@ -9,8 +9,8 @@ import java.util.stream.Collectors;
 
 /**
  * Logica de negocio del inventario: registro de entradas (completa y
- * simplificada), reduccion de stock, creacion de insumos y consulta de
- * insumos criticos para el panel de monitoreo.
+ * simplificada), reduccion de stock, creacion/edicion/baja de insumos y
+ * consulta de insumos criticos para el panel de monitoreo.
  */
 public class InsumoService {
 
@@ -256,6 +256,18 @@ public class InsumoService {
         insumo.setUnidad(unidad);
         insumoDao.actualizar(insumo);
         return insumo;
+    }
+
+    /**
+     * Elimina definitivamente un insumo del inventario.
+     * @throws IllegalArgumentException si el insumo no existe.
+     */
+    public void eliminarInsumo(int insumoId) {
+        Insumo insumo = insumoDao.buscarPorId(insumoId);
+        if (insumo == null) {
+            throw new IllegalArgumentException("El insumo indicado no existe en el sistema");
+        }
+        insumoDao.eliminar(insumoId);
     }
 
     private String requerirUnidad(String unidadTexto) {

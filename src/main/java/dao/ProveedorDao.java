@@ -63,6 +63,12 @@ public class ProveedorDao {
                 .collect(Collectors.toList());
     }
 
+    /** Reemplaza los datos de un proveedor existente (HU28: editar proveedor). */
+    public Proveedor actualizar(Proveedor proveedor) {
+        ALMACEN.put(proveedor.getId(), proveedor);
+        return proveedor;
+    }
+
     public void eliminar(int id) {
         ALMACEN.remove(id);
         VINCULOS.values().removeIf(proveedorId -> proveedorId == id);

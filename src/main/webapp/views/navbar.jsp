@@ -14,7 +14,7 @@
     List<String> visibles;
     switch (navRol) {
         case ADMIN_BODEGA:
-            visibles = Arrays.asList("tablero", "inventario", "menu", "monitoreo", "proveedores");
+            visibles = Arrays.asList("tablero", "inventario", "monitoreo", "proveedores");
             break;
         case ADMINISTRADOR:
             visibles = Arrays.asList("restaurantes", "platos", "alertas");
@@ -26,16 +26,15 @@
 
     // Definicion de cada pestana: id | etiqueta | ruta
     String[][] tabs = {
-        {"tablero",        "Tablero",        "/pedidos"},
-        {"disponibilidad", "Disponibilidad", "/disponibilidad"},
-        {"inventario",     "Inventario",     "/insumos"},
-        {"crear",          "Crear insumo",   "/insumos/crear"},
-        {"menu",           "Men\u00fa",       "/menu"},
-        {"monitoreo",      "Monitoreo",      "/monitoreo"},
-        {"proveedores",    "Proveedores",    "/proveedores"},
-        {"restaurantes",   "Restaurantes",   "/restaurantes"},
-        {"platos",         "Platos",         "/platos"},
-        {"alertas",        "Alertas",        "/alertas"}
+            {"tablero",        "Tablero",        "/pedidos"},
+            {"disponibilidad", "Disponibilidad", "/disponibilidad"},
+            {"inventario",     "Inventario",     "/insumos"},
+            {"menu",           "Menú",       "/menu"},
+            {"monitoreo",      "Panel de control", "/monitoreo"},
+            {"proveedores",    "Proveedores",    "/proveedores"},
+            {"restaurantes",   "Restaurantes",   "/restaurantes"},
+            {"platos",         "Platos",         "/platos"},
+            {"alertas",        "Alertas",        "/alertas"}
     };
 
     // Pagina de aterrizaje de cada rol al cambiar de vista.
@@ -64,22 +63,22 @@
 </header>
 
 <nav class="tabsbar" aria-label="Secciones disponibles">
-<%
-    boolean hayTabs = false;
-    for (String[] t : tabs) {
-        if (!visibles.contains(t[0])) { continue; }
-        hayTabs = true;
-        String clase = activo.equals(t[0]) ? "tab is-on" : "tab";
-        String href = navCtx + t[2] + "?rol=" + navRol.name() + "&activo=" + t[0];
-%>
+    <%
+        boolean hayTabs = false;
+        for (String[] t : tabs) {
+            if (!visibles.contains(t[0])) { continue; }
+            hayTabs = true;
+            String clase = activo.equals(t[0]) ? "tab is-on" : "tab";
+            String href = navCtx + t[2] + "?rol=" + navRol.name() + "&activo=" + t[0];
+    %>
     <a class="<%= clase %>" href="<%= href %>"><%= t[1] %></a>
-<%
-    }
-    if (!hayTabs) {
-%>
+    <%
+        }
+        if (!hayTabs) {
+    %>
     <span class="tabsbar__empty">Sin secciones asignadas por ahora</span>
-<%
-    }
-%>
+    <%
+        }
+    %>
 </nav>
 <script src="<%= navCtx %>/resources/js/tema.js"></script>

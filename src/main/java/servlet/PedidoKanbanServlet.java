@@ -9,20 +9,25 @@ import model.EstadoPedido;
 import model.Rol;
 import service.EstadoPedidoPolicy;
 import service.PedidoService;
+import service.PlatoService;
+import service.RestauranteService;
 import service.StockInsuficienteException;
 
 import java.io.IOException;
 
 /**
  * Controlador del tablero Kanban. En GET arma las columnas por estado y
- * reenvia a la vista; en POST procesa las acciones "mover" (avanzar) y
- * "retroceder" (HU20) invocando al PedidoService.
+ * reenvia a la vista; en POST procesa las acciones "mover" (avanzar),
+ * "retroceder" (HU20) y "crear" (simulador de pedidos) invocando al
+ * PedidoService.
  */
 @WebServlet("/pedidos")
 public class PedidoKanbanServlet extends HttpServlet {
 
     private final PedidoService pedidoService = new PedidoService();
     private final EstadoPedidoPolicy policy = new EstadoPedidoPolicy();
+    private final RestauranteService restauranteService = new RestauranteService();
+    private final PlatoService platoService = new PlatoService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -35,6 +40,8 @@ public class PedidoKanbanServlet extends HttpServlet {
             request.setAttribute("col_" + estado.name(), pedidoService.listarPorEstado(estado));
         }
         request.setAttribute("policy", policy);
+        request.setAttribute("restaurantes", restauranteService.listarRestaurantes());
+        request.setAttribute("platos", platoService.listarPlatos());
         request.getRequestDispatcher("/views/cu2-pedidos-kanban.jsp").forward(request, response);
     }
 
@@ -43,17 +50,23 @@ public class PedidoKanbanServlet extends HttpServlet {
             throws IOException {
         String accion = request.getParameter("accion");
         try {
-            int pedidoId = Integer.parseInt(request.getParameter("pedidoId"));
-            if ("mover".equals(accion)) {
-                pedidoService.avanzarEstado(pedidoId);
-            } else if ("retroceder".equals(accion)) {
-                pedidoService.retrocederEstado(pedidoId);
+            if ("crear".equals(accion)) {
+                int platoId = Integer.parseInt(request.getParameter("platoId"));
+                pedidoService.crearPedidoManual(platoId);
+            } else {
+                int pedidoId = Integer.parseInt(request.getParameter("pedidoId"));
+                if ("mover".equals(accion)) {
+                    pedidoService.avanzarEstado(pedidoId);
+                } else if ("retroceder".equals(accion)) {
+                    pedidoService.retrocederEstado(pedidoId);
+                }
             }
         } catch (NumberFormatException ex) {
             request.getSession().setAttribute("error", "Identificador de pedido invalido");
         } catch (StockInsuficienteException ex) {
             request.getSession().setAttribute("error", ex.getMessage());
             request.getSession().setAttribute("stockFaltantes", ex.getFaltantes());
+            request.getSession().setAttribute("stockPlato", ex.getPlato());
         } catch (RuntimeException ex) {
             request.getSession().setAttribute("error", ex.getMessage());
         }

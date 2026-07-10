@@ -60,6 +60,7 @@ public class PlatoServlet extends HttpServlet {
         }
         request.setAttribute("platos", platoService.listarPlatos());
         request.setAttribute("platoService", platoService);
+        cargarCatalogos(request);
         request.getRequestDispatcher("/views/cu31-listado-platos.jsp").forward(request, response);
     }
 

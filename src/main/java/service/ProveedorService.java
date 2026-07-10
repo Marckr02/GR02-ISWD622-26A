@@ -50,6 +50,26 @@ public class ProveedorService {
     }
 
     /**
+     * Actualiza los datos de un proveedor existente (HU28). Aplica las mismas
+     * validaciones que el registro, excluyendo al propio proveedor de la
+     * verificacion de nombre unico.
+     * @throws IllegalArgumentException si el proveedor no existe o los datos son invalidos.
+     */
+    public Proveedor actualizarProveedor(int id, String nombre, String telefono, String correo) {
+        Proveedor proveedor = proveedorDao.buscarPorId(id);
+        if (proveedor == null) {
+            throw new IllegalArgumentException("El proveedor indicado no existe en el sistema");
+        }
+        String nombreLimpio = validarNombre(nombre, id);
+        String telefonoLimpio = validarTelefono(telefono);
+        String correoLimpio = validarCorreo(correo);
+        proveedor.setNombre(nombreLimpio);
+        proveedor.setTelefono(telefonoLimpio);
+        proveedor.setCorreo(correoLimpio);
+        return proveedorDao.actualizar(proveedor);
+    }
+
+    /**
      * Elimina un proveedor (HU25).
      * @throws IllegalArgumentException si el proveedor no existe.
      * @throws IllegalStateException    si tiene insumos vinculados.
