@@ -24,28 +24,6 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-.pase-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-    padding: 1.4rem 1.8rem;
-    border-bottom: 1px solid var(--border);
-}
-
-.pase-top__brand { display: flex; align-items: center; gap: .9rem; }
-
-.pase-top__dot {
-    width: 14px; height: 14px; border-radius: 50%;
-    background: var(--listo);
-    box-shadow: 0 0 0 4px rgba(34, 197, 94, .18);
-    animation: latido 2.4s ease-in-out infinite;
-}
-
-.pase-top h1 { margin: 0; font-size: 1.4rem; letter-spacing: -.02em; }
-.pase-top p { margin: .1rem 0 0; color: var(--muted); font-size: .82rem; }
-
 .roles { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
 .roles__label { color: var(--muted); font-size: .78rem; margin-right: .2rem; }
 
@@ -74,11 +52,22 @@ body {
     color: #fca5a5;
 }
 
+/* ---------- Fila de accion, transparente, sobre el fondo principal ---------- */
+.tablero-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: .7rem;
+    padding: 1rem 1.8rem 0;
+    margin-bottom: 1rem;
+}
+
+/* ---------- Columnas del tablero, sueltas sobre el fondo, sin recuadro ---------- */
 .tablero {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 1.1rem;
-    padding: 1.5rem 1.8rem 2.5rem;
+    padding: 0 1.8rem 2.5rem;
 }
 
 .col {

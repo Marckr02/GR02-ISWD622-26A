@@ -17,12 +17,13 @@ import java.util.Map;
 
 /**
  * Controlador del modulo de inventario. En GET lista los insumos (con su
- * proveedor asociado, si tiene) y reenvia a la vista; en POST procesa las
- * acciones "registrar" (entrada simplificada), "reducir" (merma), "crear"
- * (alta de insumo), "editar" (nombre/unidad + nivel minimo, HU23/HU34) y
- * "vincularProveedor" (HU6), dejando el mensaje resultante en sesion.
+ * proveedor asociado, si tiene) y reenvia a la vista de cuadricula; en POST
+ * procesa las acciones "registrar" (entrada simplificada), "reducir" (merma),
+ * "crear" (alta de insumo, con nivel minimo y proveedor opcionales),
+ * "actualizarInsumo" (edicion unificada de nombre/unidad/minimo/proveedor)
+ * y "eliminar" (baja definitiva), dejando el mensaje resultante en sesion.
  */
-@WebServlet({"/insumos", "/insumos/crear"})
+@WebServlet("/insumos")
 public class InsumoEntradaServlet extends HttpServlet {
 
     private final InsumoService insumoService = new InsumoService();
@@ -44,17 +45,13 @@ public class InsumoEntradaServlet extends HttpServlet {
         }
         request.setAttribute("proveedorPorInsumo", proveedorPorInsumo);
 
-        String destino = request.getServletPath().endsWith("/crear")
-                ? "/views/cu23-crear-insumo.jsp"
-                : "/views/cu3-insumos-entrada.jsp";
-        request.getRequestDispatcher(destino).forward(request, response);
+        request.getRequestDispatcher("/views/cu3-insumos-entrada.jsp").forward(request, response);
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         String accion = request.getParameter("accion");
-        String destino = request.getContextPath() + "/insumos";
         try {
             if ("registrar".equals(accion)) {
                 int insumoId = parsearInsumo(request.getParameter("insumoId"));
@@ -66,45 +63,54 @@ public class InsumoEntradaServlet extends HttpServlet {
                 insumoService.reducirStock(insumoId, cantidad);
                 request.getSession().setAttribute("mensaje", "Stock reducido correctamente");
             } else if ("crear".equals(accion)) {
-                insumoService.crearInsumo(request.getParameter("nombre"), request.getParameter("unidad"));
+                Insumo creado = insumoService.crearInsumo(
+                        request.getParameter("nombre"), request.getParameter("unidad"));
+                aplicarMinimoSiPresente(creado.getId(), request.getParameter("stockMinimo"));
+                aplicarProveedorSiPresente(creado.getId(), request.getParameter("proveedorId"));
                 request.getSession().setAttribute("mensaje", "Insumo creado correctamente");
-                destino = request.getContextPath() + "/insumos/crear";
-            } else if ("editar".equals(accion)) {
+            } else if ("actualizarInsumo".equals(accion)) {
                 int insumoId = parsearInsumo(request.getParameter("insumoId"));
                 insumoService.editarInsumo(
                         insumoId, request.getParameter("nombre"), request.getParameter("unidad"));
+                aplicarMinimoSiPresente(insumoId, request.getParameter("stockMinimo"));
+                aplicarProveedorSiPresente(insumoId, request.getParameter("proveedorId"));
                 request.getSession().setAttribute("mensaje", "Insumo actualizado correctamente");
-                destino = request.getContextPath() + "/insumos/crear";
-            } else if ("actualizarMinimo".equals(accion)) {
+            } else if ("eliminar".equals(accion)) {
                 int insumoId = parsearInsumo(request.getParameter("insumoId"));
-                insumoService.actualizarStockMinimo(insumoId, request.getParameter("stockMinimo"));
-                request.getSession().setAttribute("mensaje", "Nivel minimo actualizado correctamente");
-            } else if ("vincularProveedor".equals(accion)) {
-                int insumoId = parsearInsumo(request.getParameter("insumoId"));
-                int proveedorId = Integer.parseInt(request.getParameter("proveedorId"));
-                if (proveedorId <= 0) {
-                    proveedorService.desvincularDeInsumo(insumoId);
-                    request.getSession().setAttribute("mensaje", "Insumo sin proveedor asignado");
-                } else {
-                    proveedorService.vincularAInsumo(insumoId, proveedorId);
-                    request.getSession().setAttribute("mensaje", "Proveedor asociado correctamente");
-                }
+                insumoService.eliminarInsumo(insumoId);
+                request.getSession().setAttribute("mensaje", "Insumo eliminado correctamente");
             }
         } catch (NumberFormatException ex) {
-            String mensaje = "vincularProveedor".equals(accion)
+            boolean esFormularioInsumo = "crear".equals(accion) || "actualizarInsumo".equals(accion);
+            String mensaje = esFormularioInsumo
                     ? "Debe seleccionar un proveedor de la lista"
                     : "Ingrese un numero valido";
             request.getSession().setAttribute("error", mensaje);
-            if ("crear".equals(accion) || "editar".equals(accion)) {
-                destino = request.getContextPath() + "/insumos/crear";
-            }
         } catch (RuntimeException ex) {
             request.getSession().setAttribute("error", ex.getMessage());
-            if ("crear".equals(accion) || "editar".equals(accion)) {
-                destino = request.getContextPath() + "/insumos/crear";
-            }
         }
-        response.sendRedirect(destino);
+        response.sendRedirect(request.getContextPath() + "/insumos");
+    }
+
+    /** Aplica el nuevo nivel minimo solo si el campo vino informado (crear/editar). */
+    private void aplicarMinimoSiPresente(int insumoId, String stockMinimoTexto) {
+        if (stockMinimoTexto == null || stockMinimoTexto.trim().isEmpty()) {
+            return;
+        }
+        insumoService.actualizarStockMinimo(insumoId, stockMinimoTexto);
+    }
+
+    /** Vincula o desvincula el proveedor segun el valor recibido ("0" = sin proveedor). */
+    private void aplicarProveedorSiPresente(int insumoId, String proveedorIdTexto) {
+        if (proveedorIdTexto == null || proveedorIdTexto.trim().isEmpty()) {
+            return;
+        }
+        int proveedorId = Integer.parseInt(proveedorIdTexto.trim());
+        if (proveedorId <= 0) {
+            proveedorService.desvincularDeInsumo(insumoId);
+        } else {
+            proveedorService.vincularAInsumo(insumoId, proveedorId);
+        }
     }
 
     /** Convierte el id del insumo seleccionado; si falta, lo trata como no seleccionado. */
