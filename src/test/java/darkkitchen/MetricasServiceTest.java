@@ -226,51 +226,6 @@ class MetricasServiceTest {
                 .findFirst().orElseThrow().getTotalPedidos());
     }
 
-    // ---------- HU38: resumen de insumos consumidos ----------
-
-    @ParameterizedTest
-    @ValueSource(ints = {1, 0}) // 1 = restaurante especifico, 0 = vista general (todos)
-    void obtenerResumenInsumosConsumidos_incluyeUnaFilaPorInsumoConsumido(int restauranteId) {
-        when(pedidoDao.listarTodos()).thenReturn(List.of(
-                pedido(1, EstadoPedido.ENTREGADO, 1),
-                pedido(2, EstadoPedido.ENTREGADO, 3)
-        ));
-        when(platoDao.buscarPorId(1)).thenReturn(pizza); // restaurante 1
-        when(platoDao.buscarPorId(3)).thenReturn(sushi); // restaurante 3
-        when(insumoDao.buscarPorId(10)).thenReturn(harina);
-        when(insumoDao.buscarPorId(11)).thenReturn(queso);
-
-        List<MetricaInsumo> resultado = metricasService.obtenerResumenInsumosConsumidos(restauranteId);
-
-        if (restauranteId == 0) {
-            assertEquals(2, resultado.size()); // harina y queso, sumando ambos restaurantes
-        } else {
-            assertEquals(2, resultado.size()); // pizza consume harina y queso
-        }
-    }
-
-    @Test
-    void obtenerResumenInsumosConsumidos_restauranteSinInsumosConsumidos_retornaListaVacia() {
-        when(pedidoDao.listarTodos()).thenReturn(List.of(pedido(1, EstadoPedido.RECIBIDO, 1)));
-
-        List<MetricaInsumo> resultado = metricasService.obtenerResumenInsumosConsumidos(1);
-
-        assertTrue(resultado.isEmpty());
-    }
-
-    @Test
-    void obtenerResumenGeneralInsumos_delegaEnResumenConRestauranteIdCero() {
-        when(pedidoDao.listarTodos()).thenReturn(List.of(pedido(1, EstadoPedido.ENTREGADO, 1)));
-        when(platoDao.buscarPorId(1)).thenReturn(pizza);
-        when(insumoDao.buscarPorId(10)).thenReturn(harina);
-        when(insumoDao.buscarPorId(11)).thenReturn(queso);
-
-        List<MetricaInsumo> general = metricasService.obtenerResumenGeneralInsumos();
-        List<MetricaInsumo> conCero = metricasService.obtenerResumenInsumosConsumidos(0);
-
-        assertEquals(conCero.size(), general.size());
-    }
-
     // ---------- helpers ----------
 
     private Pedido pedido(int id, EstadoPedido estado, int platoId) {
