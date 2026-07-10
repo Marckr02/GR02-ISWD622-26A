@@ -56,6 +56,14 @@ public class ProveedorServlet extends HttpServlet {
                         request.getParameter("telefono"),
                         request.getParameter("correo"));
                 request.getSession().setAttribute("mensaje", "Proveedor registrado correctamente");
+            } else if ("actualizar".equals(accion)) {
+                int id = parsearId(request.getParameter("id"));
+                proveedorService.actualizarProveedor(
+                        id,
+                        request.getParameter("nombre"),
+                        request.getParameter("telefono"),
+                        request.getParameter("correo"));
+                request.getSession().setAttribute("mensaje", "Proveedor actualizado correctamente");
             } else if ("eliminar".equals(accion)) {
                 int id = parsearId(request.getParameter("id"));
                 proveedorService.eliminarProveedor(id);

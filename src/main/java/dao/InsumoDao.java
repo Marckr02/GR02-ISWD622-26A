@@ -69,4 +69,8 @@ public class InsumoDao {
     public void actualizar(Insumo insumo) {
         ALMACEN.put(insumo.getId(), insumo);
     }
+
+    public void eliminar(int id) {
+        ALMACEN.remove(id);
+    }
 }

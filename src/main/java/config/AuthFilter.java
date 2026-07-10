@@ -17,8 +17,8 @@ import java.util.Set;
 /**
  * Control de acceso por rol. Cada seccion sensible solo admite los roles que
  * le corresponden:
- *   - Inventario (ver, registrar entrada, reducir stock, editar, vincular
- *     proveedor), creacion de insumos, menu, panel de monitoreo y
+ *   - Inventario (ver, registrar entrada, reducir stock, crear, editar,
+ *     eliminar, vincular proveedor), menu, panel de monitoreo y
  *     proveedores: unicamente ADMIN_BODEGA.
  *   - Consulta de disponibilidad del cocinero: COCINERO.
  *   - Restaurantes, platos y el historial de alertas: unicamente ADMINISTRADOR.
@@ -28,7 +28,7 @@ import java.util.Set;
  * (el sistema no implementa login real).
  */
 @WebFilter(urlPatterns = {
-        "/insumos", "/insumos/crear", "/menu", "/monitoreo", "/disponibilidad",
+        "/insumos", "/menu", "/monitoreo", "/disponibilidad",
         "/proveedores", "/restaurantes", "/platos", "/alertas"
 })
 public class AuthFilter implements Filter {
@@ -56,8 +56,7 @@ public class AuthFilter implements Filter {
         }
         Set<Rol> permitidos;
         switch (ruta) {
-            case "/insumos":        // ver inventario, registrar entrada, reducir stock, editar, vincular proveedor
-            case "/insumos/crear":  // alta de insumos
+            case "/insumos":        // ver inventario, registrar entrada, reducir stock, crear, editar, eliminar, vincular proveedor
             case "/menu":           // menu y disponibilidad general
             case "/monitoreo":      // panel de monitoreo
             case "/proveedores":    // gestion de proveedores

@@ -3,11 +3,13 @@ package service;
 import dao.InsumoDao;
 import dao.PedidoDao;
 import dao.PlatoDao;
+import dao.RestauranteDao;
 import model.EstadoPedido;
 import model.IngredientePlato;
 import model.Insumo;
 import model.Pedido;
 import model.Plato;
+import model.Restaurante;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,6 +25,7 @@ public class PedidoService {
     private final PedidoDao pedidoDao;
     private final PlatoDao platoDao;
     private final InsumoDao insumoDao;
+    private final RestauranteDao restauranteDao;
     private final ConversionUnidades conversionUnidades;
 
     public PedidoService() {
@@ -30,13 +33,18 @@ public class PedidoService {
     }
 
     public PedidoService(PedidoDao pedidoDao) {
-        this(pedidoDao, new PlatoDao(), new InsumoDao());
+        this(pedidoDao, new PlatoDao(), new InsumoDao(), new RestauranteDao());
     }
 
     public PedidoService(PedidoDao pedidoDao, PlatoDao platoDao, InsumoDao insumoDao) {
+        this(pedidoDao, platoDao, insumoDao, new RestauranteDao());
+    }
+
+    public PedidoService(PedidoDao pedidoDao, PlatoDao platoDao, InsumoDao insumoDao, RestauranteDao restauranteDao) {
         this.pedidoDao = pedidoDao;
         this.platoDao = platoDao;
         this.insumoDao = insumoDao;
+        this.restauranteDao = restauranteDao;
         this.conversionUnidades = new ConversionUnidades();
     }
 
@@ -56,6 +64,24 @@ public class PedidoService {
 
     public Pedido buscar(int id) {
         return pedidoDao.buscarPorId(id);
+    }
+
+    /**
+     * Crea manualmente un pedido nuevo a partir de un plato existente,
+     * simulando la llegada de un pedido desde el pase de cocina. Queda
+     * en estado RECIBIDO, igual que un pedido real.
+     * @throws IllegalArgumentException si el plato no existe.
+     */
+    public Pedido crearPedidoManual(int platoId) {
+        Plato plato = platoDao.buscarPorId(platoId);
+        if (plato == null) {
+            throw new IllegalArgumentException("Debe seleccionar un plato valido");
+        }
+        Restaurante restaurante = restauranteDao.buscarPorId(plato.getRestauranteId());
+        String marca = (restaurante != null) ? restaurante.getNombre() : "Generica";
+        String descripcion = plato.getNombre() + " - " + marca;
+        Pedido pedido = new Pedido(0, descripcion, marca, EstadoPedido.RECIBIDO, plato.getId());
+        return pedidoDao.guardar(pedido);
     }
 
     /**

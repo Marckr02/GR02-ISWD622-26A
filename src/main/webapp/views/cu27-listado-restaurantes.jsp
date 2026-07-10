@@ -9,12 +9,42 @@
         rol = (String) session.getAttribute("rol");
     }
     String rolQs = (rol == null || rol.isEmpty()) ? "" : ("?rol=" + rol);
-    String rolAmp = rolQs.isEmpty() ? "" : "&" + rolQs.substring(1);
 
     String mensaje = (String) session.getAttribute("mensaje");
     if (mensaje != null) { session.removeAttribute("mensaje"); }
     String error = (String) session.getAttribute("error");
     if (error != null) { session.removeAttribute("error"); }
+%>
+<%!
+    /** Gradientes suaves para el avatar; se elige uno de forma estable segun el nombre de la marca. */
+    private static final String[] AVATAR_GRADIENTES = {
+        "linear-gradient(135deg,#f97316,#c2410c)",
+        "linear-gradient(135deg,#22c55e,#15803d)",
+        "linear-gradient(135deg,#38bdf8,#0369a1)",
+        "linear-gradient(135deg,#a78bfa,#6d28d9)",
+        "linear-gradient(135deg,#f472b6,#be185d)",
+        "linear-gradient(135deg,#f5a524,#b45309)",
+    };
+
+    private String avatarGradiente(String nombre) {
+        int hash = (nombre == null) ? 0 : Math.abs(nombre.hashCode());
+        return AVATAR_GRADIENTES[hash % AVATAR_GRADIENTES.length];
+    }
+
+    private String inicial(String nombre) {
+        return (nombre == null || nombre.isEmpty()) ? "?" : nombre.substring(0, 1).toUpperCase();
+    }
+
+    /** Escapa comillas dobles para poder incrustar el valor dentro de un atributo HTML. */
+    private String attr(String valor) {
+        return valor == null ? "" : valor.replace("\"", "&quot;");
+    }
+
+    /** Escapa un texto para incrustarlo como literal dentro de un &lt;script&gt; (toast). */
+    private String js(String valor) {
+        if (valor == null) { return ""; }
+        return valor.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "").replace("\n", " ");
+    }
 %>
 <!DOCTYPE html>
 <html lang="es">
@@ -24,59 +54,120 @@
     <title>Restaurantes | Dark Kitchen</title>
     <link rel="stylesheet" href="<%= ctx %>/resources/css/gestion.css">
     <link rel="stylesheet" href="<%= ctx %>/resources/css/main.css">
+    <link rel="stylesheet" href="<%= ctx %>/resources/css/toast.css">
 </head>
 <body>
 <jsp:include page="navbar.jsp"><jsp:param name="activo" value="restaurantes"/></jsp:include>
 
-<header class="gestion-top">
-    <div class="gestion-top__brand">
-        <span class="gestion-top__dot"></span>
-        <div>
-            <h1>Restaurantes</h1>
-            <p>Marcas que operan dentro de la dark kitchen colaborativa.</p>
-        </div>
-    </div>
-    <nav class="gestion-nav">
-        <a class="destacado" href="<%= ctx %>/restaurantes?accion=nueva<%= rolAmp %>">+ Nuevo restaurante</a>
-    </nav>
-</header>
-
 <% if (mensaje != null) { %>
-    <div class="aviso aviso--ok" role="status"><%= mensaje %></div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var msg = "<%= js(mensaje) %>";
+        var tipo = /eliminad/i.test(msg) ? "danger" : (/actualizad/i.test(msg) ? "info" : "success");
+        var titulo = tipo === "danger" ? "Restaurante eliminado" : (tipo === "info" ? "Restaurante actualizado" : "Restaurante creado");
+        showToast(tipo, titulo, msg);
+    });
+</script>
 <% } %>
 <% if (error != null) { %>
-    <div class="aviso aviso--error" role="alert"><%= error %></div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        showToast("danger", "No se pudo completar la acción", "<%= js(error) %>");
+    });
+</script>
 <% } %>
 
 <main class="gestion-main">
     <section class="panel">
-        <h2>Listado de restaurantes</h2>
+        <div class="gestion-toolbar">
+            <div class="gestion-toolbar__buscar">
+                <div class="buscador">
+                    <input type="text" id="buscador-restaurantes" class="input-filtro"
+                           placeholder="Buscar marca..." aria-label="Buscar restaurante por nombre">
+                </div>
+            </div>
+            <div class="gestion-toolbar__acciones">
+                <button type="button" id="btn-abrir-nuevo" class="btn-link destacado">+ Nuevo restaurante</button>
+            </div>
+        </div>
         <% if (restaurantes == null || restaurantes.isEmpty()) { %>
             <p class="vacio">No hay restaurantes registrados</p>
         <% } else { %>
-            <table class="tabla">
-                <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Descripcion</th>
-                        <th>Accion</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% for (Restaurante r : restaurantes) { %>
-                        <tr>
-                            <td><%= r.getNombre() %></td>
-                            <td><%= (r.getDescripcion() == null || r.getDescripcion().isEmpty()) ? "\u2014" : r.getDescripcion() %></td>
-                            <td class="tabla__acciones">
-                                <a class="btn-link btn--sm" href="<%= ctx %>/restaurantes?accion=editar&id=<%= r.getId() %><%= rolAmp %>">Editar</a>
-                                <a class="btn-link btn--sm" href="<%= ctx %>/restaurantes?accion=confirmarEliminar&id=<%= r.getId() %><%= rolAmp %>">Eliminar</a>
-                            </td>
-                        </tr>
-                    <% } %>
-                </tbody>
-            </table>
+            <div class="marca-lista" id="lista-restaurantes">
+                <% for (Restaurante r : restaurantes) {
+                       String descripcion = (r.getDescripcion() == null || r.getDescripcion().isEmpty())
+                               ? "Sin descripción" : r.getDescripcion(); %>
+                    <article class="marca-card" data-nombre="<%= attr(r.getNombre().toLowerCase()) %>">
+                        <div class="marca-card__avatar" style="background: <%= avatarGradiente(r.getNombre()) %>;">
+                            <%= inicial(r.getNombre()) %>
+                        </div>
+                        <div class="marca-card__info">
+                            <h3 class="marca-card__nombre"><%= r.getNombre() %></h3>
+                            <p class="marca-card__descripcion"><%= descripcion %></p>
+                        </div>
+                        <div class="marca-card__acciones">
+                            <button type="button" class="tabla__accion-icono marca-editar" title="Editar restaurante" aria-label="Editar restaurante"
+                                    data-id="<%= r.getId() %>"
+                                    data-nombre="<%= attr(r.getNombre()) %>"
+                                    data-descripcion="<%= attr(r.getDescripcion() == null ? "" : r.getDescripcion()) %>">&#9998;</button>
+                            <button type="button" class="tabla__accion-icono tabla__accion-icono--eliminar marca-eliminar" title="Eliminar restaurante" aria-label="Eliminar restaurante"
+                                    data-id="<%= r.getId() %>"
+                                    data-nombre="<%= attr(r.getNombre()) %>">&#128465;</button>
+                        </div>
+                    </article>
+                <% } %>
+                <p class="vacio vacio--filtro" id="sin-resultados-restaurantes" hidden>Ninguna marca coincide con la busqueda.</p>
+            </div>
         <% } %>
     </section>
 </main>
+
+<!-- Modal: nuevo / editar restaurante -->
+<div class="modal-overlay" id="modal-restaurante" role="dialog" aria-modal="true" aria-labelledby="modal-restaurante-titulo">
+    <div class="modal">
+        <h3 id="modal-restaurante-titulo">Nuevo restaurante</h3>
+        <p class="hint">Nombre 2-100 caracteres. Descripci&oacute;n opcional, m&aacute;ximo 255 caracteres.</p>
+        <form method="post" action="<%= ctx %>/restaurantes<%= rolQs %>" class="form" id="form-restaurante" novalidate>
+            <input type="hidden" name="accion" id="restaurante-accion" value="guardar">
+            <input type="hidden" name="id" id="restaurante-id" value="">
+            <label>Nombre
+                <input type="text" name="nombre" id="restaurante-nombre" maxlength="100" required placeholder="Ej: Green Bowl">
+            </label>
+            <label>Descripci&oacute;n (opcional)
+                <textarea name="descripcion" id="restaurante-descripcion" maxlength="255" rows="3" placeholder="Ej: Bowls saludables y veganos."></textarea>
+            </label>
+            <div class="modal__acciones">
+                <button type="button" class="btn btn--ghost" id="modal-restaurante-cancelar">Cancelar</button>
+                <button type="submit" class="btn btn--ok" id="restaurante-guardar-btn">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Formulario oculto real de eliminacion; el icono de papelera solo lo prepara y pide confirmacion -->
+<form method="post" action="<%= ctx %>/restaurantes<%= rolQs %>" id="form-eliminar-restaurante" style="display:none;">
+    <input type="hidden" name="accion" value="eliminar">
+    <input type="hidden" name="id" id="eliminar-restaurante-id">
+</form>
+
+<!-- Modal generico de confirmacion, reutilizado por guardar/actualizar/eliminar -->
+<div class="modal-overlay" id="modal-confirm" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+    <div class="modal">
+        <div class="modal__cabecera">
+            <span class="modal__icono" id="modal-icono" aria-hidden="true">&#10003;</span>
+            <h3 id="modal-titulo">Confirmar</h3>
+        </div>
+        <p class="hint" id="modal-intro">Por favor, verifica los datos antes de guardar:</p>
+        <div class="modal__resumen-grid" id="modal-resumen-grid"></div>
+        <p class="modal__resumen" id="modal-resumen"></p>
+        <div class="modal__acciones">
+            <button type="button" class="btn btn--ghost" id="modal-cancelar">Cancelar</button>
+            <button type="button" class="btn btn--ok" id="modal-confirmar">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<script src="<%= ctx %>/resources/js/toast.js"></script>
+<script src="<%= ctx %>/resources/js/restaurantes.js"></script>
 </body>
 </html>
