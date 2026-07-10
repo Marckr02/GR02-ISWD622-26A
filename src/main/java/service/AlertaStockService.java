@@ -42,6 +42,21 @@ public class AlertaStockService {
         return alertaStockDao.guardar(alerta);
     }
 
+    /**
+     * Registra la alerta solo si el insumo esta actualmente en nivel critico
+     * (sin stock o por debajo del minimo). Pensado para invocarse justo
+     * despues de cualquier cambio de stock o de nivel minimo (entrada,
+     * reduccion, descuento por preparacion de pedido, edicion), en vez de
+     * depender de que alguien visite el panel de monitoreo.
+     * @return la alerta registrada, o null si el insumo no esta en nivel critico.
+     */
+    public AlertaStock evaluarYRegistrar(Insumo insumo) {
+        if (insumo == null || !insumo.esCritico()) {
+            return null;
+        }
+        return registrarAlerta(insumo);
+    }
+
     /** Historial completo, de la alerta mas reciente a la mas antigua (HU11). */
     public List<AlertaStock> listarHistorial() {
         return alertaStockDao.listarOrdenadoDesc();
