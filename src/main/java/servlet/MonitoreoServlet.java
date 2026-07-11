@@ -7,7 +7,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import model.Insumo;
 import model.Proveedor;
-import service.AlertaStockService;
 import service.InsumoService;
 import service.MenuService;
 import service.ProveedorService;
@@ -31,14 +30,15 @@ public class MonitoreoServlet extends HttpServlet {
 
     private final InsumoService insumoService = new InsumoService();
     private final MenuService menuService = new MenuService();
-    private final AlertaStockService alertaStockService = new AlertaStockService();
     private final ProveedorService proveedorService = new ProveedorService();
     private final RestauranteService restauranteService = new RestauranteService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        List<Insumo> criticos = insumoService.listarInsumosCriticos(alertaStockService);
+        // Las alertas ya se registran en el momento real del cambio de stock
+        // (InsumoService/PedidoService); aqui solo se leen los criticos actuales.
+        List<Insumo> criticos = insumoService.listarInsumosCriticos();
         request.setAttribute("criticos", criticos);
         request.setAttribute("menu", menuService.sincronizarMenuConInventario());
         request.setAttribute("restauranteService", restauranteService);
