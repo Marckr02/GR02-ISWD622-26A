@@ -19,14 +19,20 @@ public class InsumoService {
 
     private final InsumoDao insumoDao;
     private final ValidadorEntradaInsumo validador;
+    private final AlertaStockService alertaStockService;
 
     public InsumoService() {
-        this(new InsumoDao(), new ValidadorEntradaInsumo());
+        this(new InsumoDao(), new ValidadorEntradaInsumo(), new AlertaStockService());
     }
 
     public InsumoService(InsumoDao insumoDao, ValidadorEntradaInsumo validador) {
+        this(insumoDao, validador, new AlertaStockService());
+    }
+
+    public InsumoService(InsumoDao insumoDao, ValidadorEntradaInsumo validador, AlertaStockService alertaStockService) {
         this.insumoDao = insumoDao;
         this.validador = validador;
+        this.alertaStockService = alertaStockService;
     }
 
     public List<Insumo> listarInsumos() {
@@ -74,6 +80,7 @@ public class InsumoService {
         double valor = parsearStockMinimo(stockMinimoTexto);
         insumo.setStockMinimo(valor);
         insumoDao.actualizar(insumo);
+        evaluarAlerta(insumo);
         return insumo;
     }
 
@@ -111,6 +118,7 @@ public class InsumoService {
         }
         insumo.setStock(Numeros.redondear(insumo.getStock() - cantidad));
         insumoDao.actualizar(insumo);
+        evaluarAlerta(insumo);
         return insumo;
     }
 
@@ -138,6 +146,7 @@ public class InsumoService {
         sumarStock(insumo, cantidad);
         insumo.setCostoUnitario(costo);
         insumoDao.actualizar(insumo);
+        evaluarAlerta(insumo);
         return detalle;
     }
 
@@ -173,6 +182,7 @@ public class InsumoService {
         }
         insumo.setStock(Numeros.redondear(insumo.getStock() + cantidad));
         insumoDao.actualizar(insumo);
+        evaluarAlerta(insumo);
         return insumo;
     }
 
@@ -268,6 +278,13 @@ public class InsumoService {
             throw new IllegalArgumentException("El insumo indicado no existe en el sistema");
         }
         insumoDao.eliminar(insumoId);
+    }
+
+    /** Registra una alerta en el historial si el insumo quedo en nivel critico tras el cambio (F3.3/HU11). */
+    private void evaluarAlerta(Insumo insumo) {
+        if (alertaStockService != null) {
+            alertaStockService.evaluarYRegistrar(insumo);
+        }
     }
 
     private String requerirUnidad(String unidadTexto) {

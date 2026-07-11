@@ -27,6 +27,7 @@ public class PedidoService {
     private final InsumoDao insumoDao;
     private final RestauranteDao restauranteDao;
     private final ConversionUnidades conversionUnidades;
+    private final AlertaStockService alertaStockService;
 
     public PedidoService() {
         this(new PedidoDao());
@@ -41,11 +42,17 @@ public class PedidoService {
     }
 
     public PedidoService(PedidoDao pedidoDao, PlatoDao platoDao, InsumoDao insumoDao, RestauranteDao restauranteDao) {
+        this(pedidoDao, platoDao, insumoDao, restauranteDao, new AlertaStockService());
+    }
+
+    public PedidoService(PedidoDao pedidoDao, PlatoDao platoDao, InsumoDao insumoDao,
+                          RestauranteDao restauranteDao, AlertaStockService alertaStockService) {
         this.pedidoDao = pedidoDao;
         this.platoDao = platoDao;
         this.insumoDao = insumoDao;
         this.restauranteDao = restauranteDao;
         this.conversionUnidades = new ConversionUnidades();
+        this.alertaStockService = alertaStockService;
     }
 
     /** Pedidos de un estado concreto, usado para pintar cada columna del tablero. */
@@ -166,6 +173,9 @@ public class PedidoService {
             Insumo insumo = entry.getKey();
             insumo.setStock(Numeros.redondear(insumo.getStock() - entry.getValue()));
             insumoDao.actualizar(insumo);
+            if (alertaStockService != null) {
+                alertaStockService.evaluarYRegistrar(insumo);
+            }
         }
     }
 
