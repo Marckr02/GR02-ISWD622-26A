@@ -93,4 +93,17 @@ public class Plato {
             }
         }
     }
+
+    /** Igualdad por id: dos instancias representan el mismo plato si vienen de la misma fila en BD. */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) { return true; }
+        if (!(obj instanceof Plato)) { return false; }
+        return id == ((Plato) obj).id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id);
+    }
 }
