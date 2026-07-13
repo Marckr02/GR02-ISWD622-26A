@@ -3,57 +3,58 @@ package dao;
 import model.IngredientePlato;
 import model.Plato;
 
-import java.util.Comparator;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 /**
- * Persistencia en memoria de los platos del menu y su receta (insumos con
- * cantidad y unidad). El almacen es estatico para compartir el estado entre
- * peticiones del servlet (simula la BD). Los ids de insumo coinciden con la
- * semilla de InsumoDao; los ids de restaurante con la semilla de RestauranteDao.
+ * Persistencia de los platos del menu y su receta (insumos con cantidad y
+ * unidad, tabla plato_ingredientes) en la BD H2 (ver {@link ConexionBD}).
+ * Los datos de ejemplo (platos de la gastronomia ecuatoriana) se cargan una
+ * sola vez desde src/main/resources/db/seed.sql.
  */
 public class PlatoDao {
 
-    private static final Map<Integer, Plato> ALMACEN = new ConcurrentHashMap<>();
-    private static final AtomicInteger SECUENCIA = new AtomicInteger(0);
-
-    static {
-        // Insumos semilla: 1 Harina,2 Queso,3 Pollo,4 Aceite,5 Tomate,6 Pan,
-        // 7 Albahaca(stock 0),8 Salsa de tomate(bajo el minimo).
-        // Restaurantes semilla: 1 Napoli,2 Burger Lab,3 Sakura,4 El Fogon.
-        sembrar("Pizza Margarita", 1, List.of(
-                ing(1, 300, "g"), ing(2, 200, "g"), ing(5, 100, "g"), ing(7, 10, "g")));
-        sembrar("Hamburguesa Clasica", 2, List.of(
-                ing(6, 1, "unidades"), ing(3, 150, "g"), ing(5, 50, "g")));
-        sembrar("Pollo a la plancha", 1, List.of(
-                ing(3, 250, "g"), ing(4, 20, "ml")));
-        sembrar("Pasta Pomodoro", 3, List.of(
-                ing(1, 200, "g"), ing(8, 100, "ml")));
-    }
-
-    private static IngredientePlato ing(int insumoId, double cantidad, String unidad) {
-        return new IngredientePlato(insumoId, cantidad, unidad);
-    }
-
-    private static void sembrar(String nombre, int restauranteId, List<IngredientePlato> ingredientes) {
-        int id = SECUENCIA.incrementAndGet();
-        ALMACEN.put(id, new Plato(id, nombre, restauranteId, ingredientes));
-    }
-
     public Plato guardar(Plato plato) {
-        if (plato.getId() == 0) {
-            plato.setId(SECUENCIA.incrementAndGet());
+        String sql = "INSERT INTO platos (nombre, restaurante_id) VALUES (?, ?)";
+        try (Connection con = ConexionBD.obtenerConexion()) {
+            try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                ps.setString(1, plato.getNombre());
+                ps.setInt(2, plato.getRestauranteId());
+                ps.executeUpdate();
+                try (ResultSet claves = ps.getGeneratedKeys()) {
+                    if (claves.next()) {
+                        plato.setId(claves.getInt(1));
+                    }
+                }
+            }
+            insertarIngredientes(con, plato.getId(), plato.getIngredientes());
+            return plato;
+        } catch (SQLException ex) {
+            throw new IllegalStateException("No se pudo guardar el plato", ex);
         }
-        ALMACEN.put(plato.getId(), plato);
-        return plato;
     }
 
     public Plato buscarPorId(int id) {
-        return ALMACEN.get(id);
+        String sql = "SELECT id, nombre, restaurante_id FROM platos WHERE id = ?";
+        try (Connection con = ConexionBD.obtenerConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                return mapear(con, rs);
+            }
+        } catch (SQLException ex) {
+            throw new IllegalStateException("No se pudo buscar el plato", ex);
+        }
     }
 
     /** Busca un plato por nombre ignorando mayusculas/minusculas. */
@@ -61,29 +62,144 @@ public class PlatoDao {
         if (nombre == null) {
             return null;
         }
-        String objetivo = nombre.trim();
-        return ALMACEN.values().stream()
-                .filter(p -> p.getNombre().equalsIgnoreCase(objetivo))
-                .findFirst()
-                .orElse(null);
+        String sql = "SELECT id, nombre, restaurante_id FROM platos WHERE LOWER(nombre) = LOWER(?)";
+        try (Connection con = ConexionBD.obtenerConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, nombre.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                return mapear(con, rs);
+            }
+        } catch (SQLException ex) {
+            throw new IllegalStateException("No se pudo buscar el plato", ex);
+        }
     }
 
+    /**
+     * Lista todos los platos con su receta completa en solo 2 consultas (en
+     * vez de 1 + N, una por cada plato para cargar sus ingredientes), que es
+     * lo que hacia lenta esta pantalla con catalogos grandes.
+     */
     public List<Plato> listarTodos() {
-        return ALMACEN.values().stream()
-                .sorted(Comparator.comparingInt(Plato::getId))
-                .collect(Collectors.toList());
+        try (Connection con = ConexionBD.obtenerConexion()) {
+            Map<Integer, List<IngredientePlato>> ingredientesPorPlato = cargarTodosLosIngredientes(con);
+
+            List<Plato> resultado = new ArrayList<>();
+            try (Statement st = con.createStatement();
+                 ResultSet rs = st.executeQuery("SELECT id, nombre, restaurante_id FROM platos ORDER BY id")) {
+                while (rs.next()) {
+                    int id = rs.getInt("id");
+                    List<IngredientePlato> ingredientes = ingredientesPorPlato.getOrDefault(id, List.of());
+                    resultado.add(new Plato(id, rs.getString("nombre"), rs.getInt("restaurante_id"), ingredientes));
+                }
+            }
+            return resultado;
+        } catch (SQLException ex) {
+            throw new IllegalStateException("No se pudo listar los platos", ex);
+        }
     }
 
     public void actualizar(Plato plato) {
-        ALMACEN.put(plato.getId(), plato);
+        String sql = "UPDATE platos SET nombre = ?, restaurante_id = ? WHERE id = ?";
+        try (Connection con = ConexionBD.obtenerConexion()) {
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setString(1, plato.getNombre());
+                ps.setInt(2, plato.getRestauranteId());
+                ps.setInt(3, plato.getId());
+                ps.executeUpdate();
+            }
+            eliminarIngredientes(con, plato.getId());
+            insertarIngredientes(con, plato.getId(), plato.getIngredientes());
+        } catch (SQLException ex) {
+            throw new IllegalStateException("No se pudo actualizar el plato", ex);
+        }
     }
 
     public void eliminar(int id) {
-        ALMACEN.remove(id);
+        try (Connection con = ConexionBD.obtenerConexion()) {
+            eliminarIngredientes(con, id);
+            try (PreparedStatement ps = con.prepareStatement("DELETE FROM platos WHERE id = ?")) {
+                ps.setInt(1, id);
+                ps.executeUpdate();
+            }
+        } catch (SQLException ex) {
+            throw new IllegalStateException("No se pudo eliminar el plato", ex);
+        }
     }
 
     /** True si algun plato pertenece al restaurante indicado (bloquea su eliminacion, HU29). */
     public boolean existePlatoConRestaurante(int restauranteId) {
-        return ALMACEN.values().stream().anyMatch(p -> p.getRestauranteId() == restauranteId);
+        String sql = "SELECT COUNT(*) FROM platos WHERE restaurante_id = ?";
+        try (Connection con = ConexionBD.obtenerConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, restauranteId);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException ex) {
+            throw new IllegalStateException("No se pudo verificar los platos del restaurante", ex);
+        }
+    }
+
+    private void insertarIngredientes(Connection con, int platoId, List<IngredientePlato> ingredientes) throws SQLException {
+        if (ingredientes == null || ingredientes.isEmpty()) {
+            return;
+        }
+        String sql = "INSERT INTO plato_ingredientes (plato_id, insumo_id, cantidad, unidad_receta) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            for (IngredientePlato ingrediente : ingredientes) {
+                ps.setInt(1, platoId);
+                ps.setInt(2, ingrediente.getInsumoId());
+                ps.setDouble(3, ingrediente.getCantidad());
+                ps.setString(4, ingrediente.getUnidadReceta());
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
+    }
+
+    private void eliminarIngredientes(Connection con, int platoId) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement("DELETE FROM plato_ingredientes WHERE plato_id = ?")) {
+            ps.setInt(1, platoId);
+            ps.executeUpdate();
+        }
+    }
+
+    /** Todos los ingredientes de todos los platos, agrupados por plato_id, en una sola consulta. */
+    private Map<Integer, List<IngredientePlato>> cargarTodosLosIngredientes(Connection con) throws SQLException {
+        Map<Integer, List<IngredientePlato>> resultado = new LinkedHashMap<>();
+        String sql = "SELECT plato_id, insumo_id, cantidad, unidad_receta FROM plato_ingredientes ORDER BY plato_id, id";
+        try (Statement st = con.createStatement(); ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                int platoId = rs.getInt("plato_id");
+                IngredientePlato ingrediente = new IngredientePlato(
+                        rs.getInt("insumo_id"), rs.getDouble("cantidad"), rs.getString("unidad_receta"));
+                resultado.computeIfAbsent(platoId, k -> new ArrayList<>()).add(ingrediente);
+            }
+        }
+        return resultado;
+    }
+
+    private List<IngredientePlato> cargarIngredientes(Connection con, int platoId) throws SQLException {
+        String sql = "SELECT insumo_id, cantidad, unidad_receta FROM plato_ingredientes WHERE plato_id = ? ORDER BY id";
+        List<IngredientePlato> ingredientes = new ArrayList<>();
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, platoId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ingredientes.add(new IngredientePlato(
+                            rs.getInt("insumo_id"), rs.getDouble("cantidad"), rs.getString("unidad_receta")));
+                }
+            }
+        }
+        return ingredientes;
+    }
+
+    private Plato mapear(Connection con, ResultSet rs) throws SQLException {
+        int id = rs.getInt("id");
+        return new Plato(id, rs.getString("nombre"), rs.getInt("restaurante_id"), cargarIngredientes(con, id));
     }
 }
