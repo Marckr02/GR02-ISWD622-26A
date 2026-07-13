@@ -29,7 +29,8 @@ import java.util.Set;
  */
 @WebFilter(urlPatterns = {
         "/insumos", "/menu", "/monitoreo", "/disponibilidad",
-        "/proveedores", "/restaurantes", "/platos", "/alertas"
+        "/proveedores", "/restaurantes", "/platos", "/alertas",
+        "/metricas", "/reporte"
 })
 public class AuthFilter implements Filter {
 
@@ -68,6 +69,8 @@ public class AuthFilter implements Filter {
             case "/restaurantes":   // gestion de restaurantes
             case "/platos":         // gestion de platos y recetas
             case "/alertas":        // historial de alertas de stock critico
+            case "/metricas":       // metricas de rendimiento por restaurante (F5.1)
+            case "/reporte":        // exportacion de metricas a PDF (F5.2)
                 permitidos = EnumSet.of(Rol.ADMINISTRADOR);
                 break;
             default:
