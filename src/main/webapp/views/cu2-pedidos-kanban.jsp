@@ -1,14 +1,11 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="java.util.HashMap" %>
 <%@ page import="model.Pedido" %>
 <%@ page import="model.EstadoPedido" %>
 <%@ page import="model.Rol" %>
 <%@ page import="model.Restaurante" %>
 <%@ page import="model.Plato" %>
 <%@ page import="service.EstadoPedidoPolicy" %>
-<%@ page import="util.ColorMarca" %>
 <%
     EstadoPedidoPolicy policy = (EstadoPedidoPolicy) request.getAttribute("policy");
     if (policy == null) { policy = new EstadoPedidoPolicy(); }
@@ -30,21 +27,6 @@
     List<Plato> platos = (List<Plato>) request.getAttribute("platos");
     if (restaurantes == null) { restaurantes = java.util.Collections.emptyList(); }
     if (platos == null) { platos = java.util.Collections.emptyList(); }
-
-    // Color real de cada restaurante (asignado en su modal de edicion), indexado por
-    // nombre en minusculas para que la tarjeta del pedido siempre muestre el color
-    // vigente de la marca en vez de uno recalculado a partir del texto guardado en
-    // el pedido.
-    Map<String, String> colorPorMarca = new HashMap<>();
-    for (Restaurante r : restaurantes) {
-        if (r.getNombre() != null && r.getColor() != null && !r.getColor().isBlank()) {
-            colorPorMarca.put(r.getNombre().toLowerCase(java.util.Locale.ROOT), r.getColor());
-        }
-    }
-
-    List<Pedido> historialEntregados = (List<Pedido>) request.getAttribute("historialEntregados");
-    if (historialEntregados == null) { historialEntregados = java.util.Collections.emptyList(); }
-    java.time.format.DateTimeFormatter formatoFecha = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 %>
 <%!
     /**
@@ -67,25 +49,6 @@
         if (requerido.endsWith(")")) { requerido = requerido.substring(0, requerido.length() - 1); }
         return new String[]{ nombre, disponible, requerido };
     }
-
-    /** Escapa comillas dobles para poder incrustar el valor dentro de un atributo HTML. */
-    private String attr(String valor) {
-        return valor == null ? "" : valor.replace("\"", "&quot;");
-    }
-
-    /**
-     * Color de la marca del pedido: el color real asignado al restaurante si todavia
-     * existe uno con ese nombre, o un color de respaldo determinista (mismo criterio
-     * que la vista de restaurantes) si el pedido quedo huerfano (restaurante eliminado
-     * o renombrado sin dejar rastro).
-     */
-    private String colorDeMarca(String marca, Map<String, String> colorPorMarca) {
-        if (marca != null) {
-            String real = colorPorMarca.get(marca.toLowerCase(java.util.Locale.ROOT));
-            if (real != null) { return real; }
-        }
-        return ColorMarca.paraNombre(marca);
-    }
 %>
 <!DOCTYPE html>
 <html lang="es">
@@ -96,7 +59,9 @@
     <link rel="stylesheet" href="<%= ctx %>/resources/css/kanban.css">
     <link rel="stylesheet" href="<%= ctx %>/resources/css/main.css">
     <style>
-        .card__acciones { display: flex; flex-wrap: wrap; gap: .4rem; }
+        .card__acciones { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .2rem; }
+        .btn--retro { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+        .btn--retro:hover { color: var(--text); border-color: #3a4350; }
         .sin-seccion {
             max-width: 460px; margin: 4.5rem auto; text-align: center;
             background: var(--surface); border: 1px solid var(--border);
@@ -425,74 +390,43 @@
     <section class="col col--<%= estado.name() %>">
         <div class="col__head">
             <h2><%= estado.getEtiqueta() %></h2>
-            <div class="col__head-derecha">
-                <% if (estado.esFinal()) { %>
-                <button type="button" class="btn-historial" id="btn-ver-historial-entregados"
-                        title="Ver historial completo" aria-label="Ver historial completo de entregados">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>
-                    </svg>
-                </button>
-                <% } %>
-                <span class="col__count"><%= total %></span>
-            </div>
+            <span class="col__count"><%= total %></span>
         </div>
         <div class="col__cards">
             <% if (columna == null || columna.isEmpty()) { %>
             <p class="col__empty">Sin pedidos en esta etapa.</p>
             <% } else {
-                for (Pedido pedido : columna) {
-                    String etiquetaAvance = policy.etiquetaSiguienteAccion(estado);
-                    String etiquetaRetro = policy.etiquetaRetroceso(estado);
-                    boolean esFinalizacion = (estado == EstadoPedido.LISTO);
-                    String colorPedido = colorDeMarca(pedido.getMarca(), colorPorMarca);
-                    String textoHeaderPedido = ColorMarca.textoLegibleSobre(colorPedido); %>
-            <article class="ticket-card" data-marca="<%= attr(pedido.getMarca()) %>" style="--marca: <%= colorPedido %>;">
-                <div class="ticket-header" style="color: <%= textoHeaderPedido %>;">
-                    <%= pedido.getMarca() %>
-                </div>
-                <div class="ticket-body">
-                    <div class="card__id">#<%= pedido.getId() %></div>
-                    <p class="card__desc"><%= pedido.getDescripcion() %></p>
-                    <% if (puedeOperar && (policy.puedeAvanzar(estado) || policy.puedeRetroceder(estado))) { %>
-                    <div class="card__acciones">
-                        <% if (policy.puedeRetroceder(estado)) { %>
-                        <form method="post" action="<%= ctx %>/pedidos" class="card__action form-retroceder"
-                              data-fase-actual="<%= estado.getEtiqueta() %>"
-                              data-fase-actual-clave="<%= estado.name() %>"
-                              data-fase-destino="<%= estado.anterior().getEtiqueta() %>"
-                              data-fase-destino-clave="<%= estado.anterior().name() %>">
-                            <input type="hidden" name="accion" value="retroceder">
-                            <input type="hidden" name="pedidoId" value="<%= pedido.getId() %>">
-                            <input type="hidden" name="rol" value="<%= rol.name() %>">
-                            <button type="submit" class="btn-icon btn-icon--retro" title="<%= etiquetaRetro %>" aria-label="<%= etiquetaRetro %>">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 5l-7 7 7 7"/></svg>
-                            </button>
-                        </form>
-                        <% } %>
-                        <% if (policy.puedeAvanzar(estado)) { %>
-                        <form method="post" action="<%= ctx %>/pedidos" class="card__action">
-                            <input type="hidden" name="accion" value="mover">
-                            <input type="hidden" name="pedidoId" value="<%= pedido.getId() %>">
-                            <input type="hidden" name="rol" value="<%= rol.name() %>">
-                            <button type="submit" class="btn-icon btn-icon--avanzar" title="<%= etiquetaAvance %>" aria-label="<%= etiquetaAvance %>">
-                                <% if (esFinalizacion) { %>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-                                <% } else { %>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-                                <% } %>
-                            </button>
-                        </form>
-                        <% } %>
-                    </div>
-                    <% } else if (estado.esFinal()) { %>
-                    <span class="card__done">Completado</span>
+                for (Pedido pedido : columna) { %>
+            <article class="card">
+                <div class="card__id">#<%= pedido.getId() %></div>
+                <p class="card__desc"><%= pedido.getDescripcion() %></p>
+                <span class="card__marca"><%= pedido.getMarca() %></span>
+                <% if (puedeOperar && (policy.puedeAvanzar(estado) || policy.puedeRetroceder(estado))) { %>
+                <div class="card__acciones">
+                    <% if (policy.puedeRetroceder(estado)) { %>
+                    <form method="post" action="<%= ctx %>/pedidos" class="card__action form-retroceder"
+                          data-fase-actual="<%= estado.getEtiqueta() %>"
+                          data-fase-actual-clave="<%= estado.name() %>"
+                          data-fase-destino="<%= estado.anterior().getEtiqueta() %>"
+                          data-fase-destino-clave="<%= estado.anterior().name() %>">
+                        <input type="hidden" name="accion" value="retroceder">
+                        <input type="hidden" name="pedidoId" value="<%= pedido.getId() %>">
+                        <input type="hidden" name="rol" value="<%= rol.name() %>">
+                        <button type="submit" class="btn--retro">&larr; <%= policy.etiquetaRetroceso(estado) %></button>
+                    </form>
+                    <% } %>
+                    <% if (policy.puedeAvanzar(estado)) { %>
+                    <form method="post" action="<%= ctx %>/pedidos" class="card__action">
+                        <input type="hidden" name="accion" value="mover">
+                        <input type="hidden" name="pedidoId" value="<%= pedido.getId() %>">
+                        <input type="hidden" name="rol" value="<%= rol.name() %>">
+                        <button type="submit"><%= policy.etiquetaSiguienteAccion(estado) %> &rarr;</button>
+                    </form>
                     <% } %>
                 </div>
+                <% } else if (estado.esFinal()) { %>
+                <span class="card__done">Completado</span>
+                <% } %>
             </article>
             <%     }
             } %>
@@ -570,12 +504,12 @@
                     // El estado de carga se activa recien aqui, al confirmar;
                     // form.submit() no dispara el evento "submit" del formulario,
                     // asi que el listener generico de kanban.js nunca lo veria.
-                    var card = formPendiente.closest(".ticket-card");
-                    if (card) { card.classList.add("ticket-card--moviendo"); }
+                    var card = formPendiente.closest(".card");
+                    if (card) { card.classList.add("card--moviendo"); }
                     var boton = formPendiente.querySelector("button");
                     if (boton) {
                         boton.disabled = true;
-                        boton.classList.add("btn-icon--cargando");
+                        boton.textContent = "Moviendo...";
                     }
                     formPendiente.submit();
                 }
@@ -584,65 +518,6 @@
         }
         modal.addEventListener("click", function (e) {
             if (e.target === modal) { cerrar(); }
-        });
-    })();
-</script>
-
-<!-- Modal de historial completo de pedidos entregados (la columna ENTREGADO solo muestra los 10 mas recientes) -->
-<div class="modal-overlay" id="overlay-historial-entregados">
-    <div class="modal--historial" role="dialog" aria-modal="true" aria-labelledby="historial-entregados-titulo">
-        <div class="modal--historial__cabecera">
-            <h2 id="historial-entregados-titulo">Historial de Pedidos Entregados</h2>
-            <button type="button" class="btn-cerrar-modal" id="btn-cerrar-historial" title="Cerrar" aria-label="Cerrar historial">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </button>
-        </div>
-        <div class="modal--historial__cuerpo">
-            <% if (historialEntregados.isEmpty()) { %>
-            <p class="col__empty">Aun no hay pedidos entregados.</p>
-            <% } else { %>
-            <table class="tabla-historial">
-                <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Descripci&oacute;n</th>
-                    <th>Marca</th>
-                    <th>Fecha</th>
-                </tr>
-                </thead>
-                <tbody>
-                <% for (Pedido p : historialEntregados) { %>
-                <tr>
-                    <td>#<%= p.getId() %></td>
-                    <td><%= p.getDescripcion() %></td>
-                    <td><%= p.getMarca() %></td>
-                    <td><%= p.getCreadoEn().format(formatoFecha) %></td>
-                </tr>
-                <% } %>
-                </tbody>
-            </table>
-            <% } %>
-        </div>
-    </div>
-</div>
-<script>
-    (function () {
-        var overlay = document.getElementById("overlay-historial-entregados");
-        var btnAbrir = document.getElementById("btn-ver-historial-entregados");
-        var btnCerrar = document.getElementById("btn-cerrar-historial");
-        if (!overlay) { return; }
-
-        function abrir() { overlay.classList.add("is-abierto"); }
-        function cerrar() { overlay.classList.remove("is-abierto"); }
-
-        if (btnAbrir) { btnAbrir.addEventListener("click", abrir); }
-        if (btnCerrar) { btnCerrar.addEventListener("click", cerrar); }
-        overlay.addEventListener("click", function (e) {
-            if (e.target === overlay) { cerrar(); }
-        });
-        document.addEventListener("keydown", function (e) {
-            if (e.key === "Escape" && overlay.classList.contains("is-abierto")) { cerrar(); }
         });
     })();
 </script>

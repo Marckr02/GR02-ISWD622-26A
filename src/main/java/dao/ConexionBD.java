@@ -2,18 +2,14 @@ package dao;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import util.ColorMarca;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -63,7 +59,6 @@ public final class ConexionBD {
             if (tablaRestaurantesVacia(conexion)) {
                 ejecutarScript(conexion, "/db/seed.sql");
             }
-            asignarColoresFaltantes(conexion);
         } catch (SQLException ex) {
             throw new ExceptionInInitializerError("No se pudo inicializar la base de datos: " + ex.getMessage());
         }
@@ -95,35 +90,6 @@ public final class ConexionBD {
             directorio = home + "/data";
         }
         return "jdbc:h2:file:" + directorio + "/darkkitchen;AUTO_SERVER=TRUE";
-    }
-
-    /**
-     * Da color a cualquier restaurante que todavia tenga color = NULL (los sembrados
-     * por seed.sql, o los que existian antes de que esta columna se agregara), con el
-     * mismo color determinista que ya usan las vistas como respaldo (ver
-     * {@link util.ColorMarca}), para que la columna quede realmente poblada en la BD
-     * en vez de calcularse al vuelo cada vez que se renderiza una pantalla. Se corre
-     * en cada arranque; es barato y no hace nada si ya no quedan colores por asignar.
-     */
-    private static void asignarColoresFaltantes(Connection conexion) throws SQLException {
-        List<Object[]> pendientes = new ArrayList<>();
-        try (Statement st = conexion.createStatement();
-             ResultSet rs = st.executeQuery("SELECT id, nombre FROM restaurantes WHERE color IS NULL")) {
-            while (rs.next()) {
-                pendientes.add(new Object[]{ rs.getInt("id"), rs.getString("nombre") });
-            }
-        }
-        if (pendientes.isEmpty()) {
-            return;
-        }
-        try (PreparedStatement ps = conexion.prepareStatement("UPDATE restaurantes SET color = ? WHERE id = ?")) {
-            for (Object[] fila : pendientes) {
-                ps.setString(1, ColorMarca.paraNombre((String) fila[1]));
-                ps.setInt(2, (Integer) fila[0]);
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        }
     }
 
     private static boolean tablaRestaurantesVacia(Connection conexion) throws SQLException {

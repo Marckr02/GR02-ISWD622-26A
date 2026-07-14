@@ -160,66 +160,12 @@
         });
     }
 
-    /** Iconos de +/- dentro de cada tarjeta: abren el modal de stock correspondiente
-     *  con el insumo de esa tarjeta ya inyectado (id + nombre + unidad/stock), sin
-     *  necesidad de volver a seleccionarlo dentro del modal. */
-    function activarAccionesRapidasStock() {
-        var overlayAgregar = document.getElementById("modal-agregar-stock");
-        var overlayReducir = document.getElementById("modal-reducir-stock");
-
-        function abrirModalStock(overlay, boton) {
-            if (!overlay) {
-                return;
-            }
-            var insumoIdInput = overlay.querySelector("input[name='insumoId']");
-            var nombreDisplay = overlay.querySelector(".modal__insumo-nombre");
-            var cantidad = overlay.querySelector("input[name='cantidad']");
-            var errorBox = overlay.querySelector(".form__error");
-            var pistaUnidad = overlay.querySelector(".unidad-hint");
-            var pistaStock = overlay.querySelector(".stock-disponible-hint");
-
-            var id = boton.getAttribute("data-id");
-            var nombre = boton.getAttribute("data-nombre") || "";
-            var unidad = boton.getAttribute("data-unidad") || "";
-            var stock = boton.getAttribute("data-stock");
-
-            if (insumoIdInput) { insumoIdInput.value = id; }
-            if (nombreDisplay) {
-                nombreDisplay.textContent = nombre;
-                nombreDisplay.setAttribute("data-unidad", unidad);
-                if (stock !== null) {
-                    nombreDisplay.setAttribute("data-stock", stock);
-                } else {
-                    nombreDisplay.removeAttribute("data-stock");
-                }
-            }
-            if (pistaUnidad) { pistaUnidad.textContent = unidad ? "(" + unidad + ")" : ""; }
-            if (pistaStock) { pistaStock.textContent = (stock !== null) ? "Stock disponible: " + Number(stock) + " " + unidad : ""; }
-            if (errorBox) { errorBox.textContent = ""; }
-            if (cantidad) { cantidad.value = ""; }
-            overlay.style.display = "flex";
-            if (cantidad) { cantidad.focus(); }
-        }
-
-        document.querySelectorAll(".insumo-card__stock-btn--add").forEach(function (boton) {
-            boton.addEventListener("click", function () {
-                abrirModalStock(overlayAgregar, boton);
-            });
-        });
-        document.querySelectorAll(".insumo-card__stock-btn--reduce").forEach(function (boton) {
-            boton.addEventListener("click", function () {
-                abrirModalStock(overlayReducir, boton);
-            });
-        });
-    }
-
     document.addEventListener("DOMContentLoaded", function () {
         activarFiltrosGrid();
         activarContactoProveedor();
-        activarAccionesRapidasStock();
 
-        cablearModalSimple("modal-agregar-stock", null, "modal-agregar-cancelar");
-        cablearModalSimple("modal-reducir-stock", null, "modal-reducir-cancelar");
+        cablearModalSimple("modal-agregar-stock", "btn-abrir-agregar", "modal-agregar-cancelar");
+        cablearModalSimple("modal-reducir-stock", "btn-abrir-reducir", "modal-reducir-cancelar");
         cablearModalSimple("modal-crear-insumo", "btn-abrir-crear", "modal-crear-cancelar");
         cablearModalSimple("modal-editar-insumo", null, "modal-editar-cancelar");
 
@@ -306,25 +252,56 @@
             });
         }
 
-        // ---------- Formularios de stock (añadir / reducir): el insumo llega precargado
-        // desde el icono de la tarjeta (ver activarAccionesRapidasStock), sin select propio ----------
+        // ---------- Formularios de stock (añadir / reducir), con validacion propia ----------
         var forms = document.querySelectorAll("form.form--confirmable");
         Array.prototype.forEach.call(forms, function (form) {
-            var insumoIdInput = form.querySelector("input[name='insumoId']");
-            var nombreDisplay = form.querySelector(".modal__insumo-nombre");
+            var select = form.querySelector("select[name='insumoId']");
             var cantidad = form.querySelector("input[name='cantidad']");
+            var unidad = form.querySelector("select[name='unidad']");
             var errorBox = form.querySelector(".form__error");
+            var pistaUnidad = form.querySelector(".unidad-hint");
             var pistaStock = form.querySelector(".stock-disponible-hint");
             var soloEntero = form.getAttribute("data-entero") === "true";
 
+            function sincronizarUnidad() {
+                if (!select || select.selectedIndex < 0) {
+                    return;
+                }
+                var opcion = select.options[select.selectedIndex];
+                var unidadActual = opcion.getAttribute("data-unidad");
+                if (unidad && unidadActual) {
+                    unidad.value = unidadActual;
+                }
+                if (pistaUnidad) {
+                    pistaUnidad.textContent = (unidadActual && opcion.value) ? "(" + unidadActual + ")" : "";
+                }
+                if (pistaStock) {
+                    var stockDisponible = opcion.getAttribute("data-stock");
+                    pistaStock.textContent = (stockDisponible && opcion.value)
+                        ? "Stock disponible: " + Number(stockDisponible) + " " + unidadActual
+                        : "";
+                }
+            }
+
             function unidadSeleccionada() {
-                return (nombreDisplay && nombreDisplay.getAttribute("data-unidad")) || "";
+                if (unidad) {
+                    return unidad.value;
+                }
+                if (!select || select.selectedIndex < 0) {
+                    return "";
+                }
+                return select.options[select.selectedIndex].getAttribute("data-unidad") || "";
+            }
+
+            if (select) {
+                select.addEventListener("change", sincronizarUnidad);
+                sincronizarUnidad();
             }
 
             form.addEventListener("submit", function (e) {
                 e.preventDefault();
-                if (!insumoIdInput || !insumoIdInput.value) {
-                    if (errorBox) { errorBox.textContent = "No se identificó el insumo. Cierra el modal e inténtalo de nuevo."; }
+                if (!select.value) {
+                    if (errorBox) { errorBox.textContent = "Debe seleccionar un insumo de la lista"; }
                     return;
                 }
                 var res = validarCantidad(cantidad.value, soloEntero);
@@ -336,8 +313,8 @@
                     if (errorBox) { errorBox.textContent = "La cantidad en unidades debe ser un numero entero"; }
                     return;
                 }
-                var stockDisponible = nombreDisplay ? nombreDisplay.getAttribute("data-stock") : null;
-                if (stockDisponible !== null && stockDisponible !== "" && Number(cantidad.value) > Number(stockDisponible)) {
+                var stockDisponible = select.options[select.selectedIndex].getAttribute("data-stock");
+                if (stockDisponible !== null && Number(cantidad.value) > Number(stockDisponible)) {
                     if (errorBox) {
                         errorBox.textContent = "La cantidad a reducir excede el stock disponible ("
                             + Number(stockDisponible) + " " + unidadSeleccionada() + ")";
@@ -348,7 +325,7 @@
                 var unidadTexto = unidadSeleccionada() ? (" " + unidadSeleccionada()) : "";
                 mostrarConfirmacion(form, {
                     campos: [
-                        { clave: "Insumo", valor: nombreDisplay ? nombreDisplay.textContent : "" },
+                        { clave: "Insumo", valor: textoInsumo(select) },
                         { clave: "Cantidad", valor: cantidad.value + unidadTexto }
                     ]
                 });

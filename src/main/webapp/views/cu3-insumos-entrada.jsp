@@ -138,6 +138,12 @@
         </div>
         <div class="inv-toolbar__acciones">
             <button type="button" id="btn-abrir-crear" class="btn btn--ghost btn--sm">+ Crear insumo</button>
+            <button type="button" id="btn-abrir-agregar" class="btn btn--icon btn--add">
+                <span class="btn__icono">&uarr;</span> Añadir stock
+            </button>
+            <button type="button" id="btn-abrir-reducir" class="btn btn--icon btn--reduce">
+                <span class="btn__icono">&darr;</span> Reducir stock
+            </button>
         </div>
     </div>
 
@@ -163,27 +169,8 @@
                   title="Estado del stock"></span>
             <h3 class="insumo-card__nombre"><%= insumo.getNombre() %></h3>
             <div class="insumo-card__cantidad">
-                <span class="insumo-card__cantidad-valor"><%= formatearCantidad(insumo.getStock(), insumo.getUnidad()) %></span>
+                <%= formatearCantidad(insumo.getStock(), insumo.getUnidad()) %>
                 <span class="insumo-card__unidad"><%= insumo.getUnidad() %></span>
-                <span class="insumo-card__stock-acciones">
-                    <button type="button" class="insumo-card__stock-btn insumo-card__stock-btn--add"
-                            data-id="<%= insumo.getId() %>"
-                            data-nombre="<%= attr(insumo.getNombre()) %>"
-                            data-unidad="<%= insumo.getUnidad() %>"
-                            title="Añadir stock" aria-label="Añadir stock de <%= attr(insumo.getNombre()) %>">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-                    </button>
-                    <button type="button" class="insumo-card__stock-btn insumo-card__stock-btn--reduce"
-                            data-id="<%= insumo.getId() %>"
-                            data-nombre="<%= attr(insumo.getNombre()) %>"
-                            data-unidad="<%= insumo.getUnidad() %>"
-                            data-stock="<%= insumo.getStock() %>"
-                            title="Reducir stock" aria-label="Reducir stock de <%= attr(insumo.getNombre()) %>">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
-                    </button>
-                </span>
             </div>
             <div class="insumo-card__minimo">
                 Mínimo: <%= formatearCantidad(insumo.getStockMinimo(), insumo.getUnidad()) %> <%= insumo.getUnidad() %>
@@ -301,18 +288,24 @@
 
 <!-- Modal: añadir stock -->
 <div class="modal-overlay" id="modal-agregar-stock" role="dialog" aria-modal="true" aria-labelledby="modal-agregar-titulo">
-    <div class="modal modal--stock-add">
-        <h3 id="modal-agregar-titulo" class="modal__titulo-centrado modal__titulo--add">Añadir stock</h3>
+    <div class="modal">
+        <h3 id="modal-agregar-titulo">Añadir stock</h3>
+        <p class="hint">Selecciona el insumo y la cantidad a ingresar.</p>
         <form method="post" action="<%= ctx %>/insumos<%= rolQs %>" class="form form--confirmable"
               data-entero="false" data-titulo="Confirmar entrada" data-confirmar="Registrar">
             <input type="hidden" name="accion" value="registrar">
-            <input type="hidden" name="insumoId" id="agregar-insumo-id">
-            <div class="modal__insumo-display">
-                <span class="modal__insumo-label">Insumo</span>
-                <span class="modal__insumo-nombre" id="agregar-insumo-nombre"></span>
-            </div>
+            <label>Insumo
+                <select name="insumoId" required autofocus>
+                    <option value="">-- Selecciona un insumo --</option>
+                    <% if (insumos != null) {
+                        for (Insumo insumo : insumos) { %>
+                    <option value="<%= insumo.getId() %>" data-unidad="<%= insumo.getUnidad() %>"><%= insumo.getNombre() %></option>
+                    <%     }
+                    } %>
+                </select>
+            </label>
             <label>Cantidad <span class="unidad-hint"></span>
-                <input type="number" name="cantidad" step="0.01" min="0.01" required autofocus>
+                <input type="number" name="cantidad" step="0.01" min="0.01" required>
             </label>
             <p class="form__error" aria-live="polite"></p>
             <div class="modal__acciones">
@@ -325,18 +318,24 @@
 
 <!-- Modal: reducir stock -->
 <div class="modal-overlay" id="modal-reducir-stock" role="dialog" aria-modal="true" aria-labelledby="modal-reducir-titulo">
-    <div class="modal modal--stock-reduce">
-        <h3 id="modal-reducir-titulo" class="modal__titulo-centrado modal__titulo--reduce">Reducir stock</h3>
+    <div class="modal">
+        <h3 id="modal-reducir-titulo">Reducir stock</h3>
+        <p class="hint">Mermas, pérdidas o desperdicios.</p>
         <form method="post" action="<%= ctx %>/insumos<%= rolQs %>" class="form form--confirmable"
               data-entero="false" data-titulo="Confirmar reduccion" data-confirmar="Confirmar reduccion">
             <input type="hidden" name="accion" value="reducir">
-            <input type="hidden" name="insumoId" id="reducir-insumo-id">
-            <div class="modal__insumo-display">
-                <span class="modal__insumo-label">Insumo</span>
-                <span class="modal__insumo-nombre" id="reducir-insumo-nombre"></span>
-            </div>
+            <label>Insumo
+                <select name="insumoId" required>
+                    <option value="">-- Selecciona un insumo --</option>
+                    <% if (insumos != null) {
+                        for (Insumo insumo : insumos) { %>
+                    <option value="<%= insumo.getId() %>" data-unidad="<%= insumo.getUnidad() %>" data-stock="<%= insumo.getStock() %>"><%= insumo.getNombre() %></option>
+                    <%     }
+                    } %>
+                </select>
+            </label>
             <label>Cantidad a reducir <span class="unidad-hint"></span>
-                <input type="number" name="cantidad" step="0.01" min="0.01" required autofocus>
+                <input type="number" name="cantidad" step="0.01" min="0.01" required>
             </label>
             <p class="panel__hint stock-disponible-hint"></p>
             <p class="form__error" aria-live="polite"></p>

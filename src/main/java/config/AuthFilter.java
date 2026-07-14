@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
+import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import model.Rol;
@@ -24,11 +25,13 @@ import java.util.Set;
  * El tablero (/pedidos) queda abierto como pantalla de inicio.
  *
  * El rol vigente se toma del parametro "rol" o del atributo de sesion "rol"
- * (el sistema no implementa login real). Registrado en web.xml (no con
- * @WebFilter) para garantizar que corra despues de CodificacionFilter: este
- * filtro lee request.getParameter("rol"), y hacerlo antes de fijar UTF-8
- * dejaria el resto de los parametros de la peticion mal decodificados.
+ * (el sistema no implementa login real).
  */
+@WebFilter(urlPatterns = {
+        "/insumos", "/menu", "/monitoreo", "/disponibilidad",
+        "/proveedores", "/restaurantes", "/platos", "/alertas",
+        "/metricas", "/reporte"
+})
 public class AuthFilter implements Filter {
 
     @Override

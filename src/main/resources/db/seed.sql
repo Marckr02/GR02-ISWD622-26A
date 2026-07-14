@@ -5,15 +5,13 @@
 -- vez, cuando la tabla restaurantes esta vacia (ver ConexionBD).
 
 -- ============== RESTAURANTES (id 1-6) ==============
--- nombre, descripcion, color (hex de marca: tonos distintos y suaves, pensados
--- para no chocar con el fondo oscuro del resto de la interfaz).
-INSERT INTO restaurantes (nombre, descripcion, color) VALUES
-('El Hornado de la Rumiñahui', 'Especialistas en hornado y fritada de la sierra ecuatoriana.', '#C97B63'),
-('Cevichería Manabita El Marinero', 'Ceviches y mariscos frescos al estilo manabita.', '#5B9AA0'),
-('Fritada La Chola Cuencana', 'Fritada, mote y llapingachos al estilo cuencano.', '#B08968'),
-('Encebollados El Puerto', 'Encebollado guayaquileño y comida costeña.', '#7A9E7E'),
-('Parrilladas Los Andes', 'Carnes a la parrilla y platos fuertes de la sierra.', '#8C7AA9'),
-('Dulces y Coladas La Morlaca', 'Coladas, humitas, quimbolitos y dulces tradicionales.', '#C9A66B');
+INSERT INTO restaurantes (nombre, descripcion) VALUES
+('El Hornado de la Rumiñahui', 'Especialistas en hornado y fritada de la sierra ecuatoriana.'),
+('Cevichería Manabita El Marinero', 'Ceviches y mariscos frescos al estilo manabita.'),
+('Fritada La Chola Cuencana', 'Fritada, mote y llapingachos al estilo cuencano.'),
+('Encebollados El Puerto', 'Encebollado guayaquileño y comida costeña.'),
+('Parrilladas Los Andes', 'Carnes a la parrilla y platos fuertes de la sierra.'),
+('Dulces y Coladas La Morlaca', 'Coladas, humitas, quimbolitos y dulces tradicionales.');
 
 -- ============== INSUMOS (id 1-28) ==============
 -- nombre, unidad, stock, costo_unitario, stock_minimo
