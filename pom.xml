@@ -52,6 +52,19 @@
             <version>5.1.0</version>
         </dependency>
 
+        <!-- HikariCP exige slf4j-api en tiempo de ejecucion (SLF4J 1.7.x, que busca
+             una clase StaticLoggerBinder). Sin una implementacion de logging en el
+             classpath, Tomcat imprime "Failed to load class
+             org.slf4j.impl.StaticLoggerBinder" al arrancar. Este proyecto no usa
+             logs por consola, asi que se resuelve con la implementacion "no-op"
+             oficial de SLF4J: aporta la clase que faltaba y descarta cualquier log
+             en silencio, sin necesidad de configurar Logback/Log4j. -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-nop</artifactId>
+            <version>1.7.36</version>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>

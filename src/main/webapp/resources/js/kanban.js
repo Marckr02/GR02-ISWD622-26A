@@ -12,14 +12,14 @@
 
     forms.forEach(function (form) {
       form.addEventListener("submit", function () {
-        var card = form.closest(".card");
+        var card = form.closest(".ticket-card");
         if (card) {
-          card.classList.add("card--moviendo");
+          card.classList.add("ticket-card--moviendo");
         }
         var boton = form.querySelector("button");
         if (boton) {
           boton.disabled = true;
-          boton.textContent = "Moviendo...";
+          boton.classList.add("btn-icon--cargando");
         }
       });
     });

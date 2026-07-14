@@ -65,6 +65,17 @@ public class PedidoService {
         return listarPorEstado(EstadoPedido.RECIBIDO);
     }
 
+    /** Columna ENTREGADO del tablero: solo los mas recientes, para no sobrecargarla. */
+    public List<Pedido> listarEntregadosRecientes(int limite) {
+        List<Pedido> todos = pedidoDao.buscarPorEstadoRecientePrimero(EstadoPedido.ENTREGADO);
+        return todos.size() > limite ? todos.subList(0, limite) : todos;
+    }
+
+    /** Historial completo de entregados (mas reciente primero), para el modal de historial. */
+    public List<Pedido> listarHistorialEntregados() {
+        return pedidoDao.buscarPorEstadoRecientePrimero(EstadoPedido.ENTREGADO);
+    }
+
     public List<Pedido> listarTodos() {
         return pedidoDao.listarTodos();
     }

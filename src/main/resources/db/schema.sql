@@ -5,8 +5,12 @@
 CREATE TABLE IF NOT EXISTS restaurantes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
-    descripcion VARCHAR(255)
+    descripcion VARCHAR(255),
+    color VARCHAR(7)
 );
+-- CREATE TABLE IF NOT EXISTS no altera una tabla que ya existia sin esta columna;
+-- este ADD COLUMN mantiene al dia cualquier BD de archivo previa.
+ALTER TABLE restaurantes ADD COLUMN IF NOT EXISTS color VARCHAR(7);
 
 CREATE TABLE IF NOT EXISTS insumos (
     id INT AUTO_INCREMENT PRIMARY KEY,

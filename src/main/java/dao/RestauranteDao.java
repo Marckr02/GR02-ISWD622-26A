@@ -18,11 +18,12 @@ import java.util.List;
 public class RestauranteDao {
 
     public Restaurante guardar(Restaurante restaurante) {
-        String sql = "INSERT INTO restaurantes (nombre, descripcion) VALUES (?, ?)";
+        String sql = "INSERT INTO restaurantes (nombre, descripcion, color) VALUES (?, ?, ?)";
         try (Connection con = ConexionBD.obtenerConexion();
              PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, restaurante.getNombre());
             ps.setString(2, restaurante.getDescripcion());
+            ps.setString(3, restaurante.getColor());
             ps.executeUpdate();
             try (ResultSet claves = ps.getGeneratedKeys()) {
                 if (claves.next()) {
@@ -36,7 +37,7 @@ public class RestauranteDao {
     }
 
     public Restaurante buscarPorId(int id) {
-        String sql = "SELECT id, nombre, descripcion FROM restaurantes WHERE id = ?";
+        String sql = "SELECT id, nombre, descripcion, color FROM restaurantes WHERE id = ?";
         try (Connection con = ConexionBD.obtenerConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, id);
@@ -53,7 +54,7 @@ public class RestauranteDao {
         if (nombre == null) {
             return null;
         }
-        String sql = "SELECT id, nombre, descripcion FROM restaurantes WHERE LOWER(nombre) = LOWER(?)";
+        String sql = "SELECT id, nombre, descripcion, color FROM restaurantes WHERE LOWER(nombre) = LOWER(?)";
         try (Connection con = ConexionBD.obtenerConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, nombre.trim());
@@ -67,7 +68,7 @@ public class RestauranteDao {
 
     /** Listado ordenado alfabeticamente por nombre (HU27). */
     public List<Restaurante> listarTodos() {
-        String sql = "SELECT id, nombre, descripcion FROM restaurantes ORDER BY LOWER(nombre)";
+        String sql = "SELECT id, nombre, descripcion, color FROM restaurantes ORDER BY LOWER(nombre)";
         List<Restaurante> resultado = new ArrayList<>();
         try (Connection con = ConexionBD.obtenerConexion();
              Statement st = con.createStatement();
@@ -82,12 +83,13 @@ public class RestauranteDao {
     }
 
     public void actualizar(Restaurante restaurante) {
-        String sql = "UPDATE restaurantes SET nombre = ?, descripcion = ? WHERE id = ?";
+        String sql = "UPDATE restaurantes SET nombre = ?, descripcion = ?, color = ? WHERE id = ?";
         try (Connection con = ConexionBD.obtenerConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, restaurante.getNombre());
             ps.setString(2, restaurante.getDescripcion());
-            ps.setInt(3, restaurante.getId());
+            ps.setString(3, restaurante.getColor());
+            ps.setInt(4, restaurante.getId());
             ps.executeUpdate();
         } catch (SQLException ex) {
             throw new IllegalStateException("No se pudo actualizar el restaurante", ex);
@@ -106,6 +108,6 @@ public class RestauranteDao {
     }
 
     private Restaurante mapear(ResultSet rs) throws SQLException {
-        return new Restaurante(rs.getInt("id"), rs.getString("nombre"), rs.getString("descripcion"));
+        return new Restaurante(rs.getInt("id"), rs.getString("nombre"), rs.getString("descripcion"), rs.getString("color"));
     }
 }

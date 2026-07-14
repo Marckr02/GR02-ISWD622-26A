@@ -65,4 +65,26 @@ class PedidoDaoTest {
 
         assertEquals(EstadoPedido.EN_PREPARACION, dao.buscarPorId(creado.getId()).getEstado());
     }
+
+    @Test
+    void renombrarMarcaActualizaTodosLosPedidosConEsaMarca() {
+        String marcaVieja = "Marca Vieja Dao " + System.nanoTime();
+        Pedido p1 = dao.guardar(new Pedido(0, "Pedido Uno", marcaVieja, EstadoPedido.RECIBIDO, 0));
+        Pedido p2 = dao.guardar(new Pedido(0, "Pedido Dos", marcaVieja, EstadoPedido.LISTO, 0));
+
+        dao.renombrarMarca(marcaVieja, "Marca Nueva Dao");
+
+        assertEquals("Marca Nueva Dao", dao.buscarPorId(p1.getId()).getMarca());
+        assertEquals("Marca Nueva Dao", dao.buscarPorId(p2.getId()).getMarca());
+    }
+
+    @Test
+    void renombrarMarcaNoHaceNadaSiElNombreNoCambio() {
+        String marca = "Marca Igual Dao " + System.nanoTime();
+        Pedido creado = dao.guardar(new Pedido(0, "Pedido Tres", marca, EstadoPedido.RECIBIDO, 0));
+
+        dao.renombrarMarca(marca, marca);
+
+        assertEquals(marca, dao.buscarPorId(creado.getId()).getMarca());
+    }
 }

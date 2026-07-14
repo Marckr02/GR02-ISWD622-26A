@@ -130,6 +130,22 @@ body {
 .form__error { color: var(--error); font-size: .82rem; min-height: 1em; }
 .form__actions { display: flex; gap: .7rem; margin-top: .3rem; }
 
+/* ---------- Selector de color de marca: picker nativo + hex de solo apoyo ---------- */
+.campo-color { display: flex; align-items: center; gap: .6rem; width: 100%; }
+.campo-color input[type="color"] {
+    flex-shrink: 0;
+    width: 46px;
+    height: 38px;
+    padding: 3px;
+    cursor: pointer;
+}
+.campo-color__hex {
+    flex: 1 1 auto;
+    text-transform: uppercase;
+    font-family: "SFMono-Regular", Consolas, "Courier New", monospace;
+    letter-spacing: .03em;
+}
+
 .btn {
     padding: .7rem 1rem;
     border: none;
@@ -483,11 +499,17 @@ body.tema-claro .filtro-fecha input[type="date"] { color-scheme: light; }
     width: 100%;
     background: var(--surface);
     border: 1px solid var(--border);
+    /* Acento estructural: borde izquierdo grueso con el color exacto de la marca
+       (asignado en el modal de edicion, o uno de respaldo mientras no se elija ninguno). */
+    border-left: 5px solid var(--marca, var(--border));
     border-radius: var(--radius);
     padding: 1rem 1.3rem;
-    transition: background .15s;
+    transition: background .15s, box-shadow .15s, transform .12s;
 }
-.marca-card:hover { background: var(--surface-2); }
+.marca-card:hover {
+    background: var(--surface-2);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--marca) 45%, transparent), 0 6px 18px rgba(0, 0, 0, .3);
+}
 
 .marca-card__avatar {
     flex-shrink: 0;
@@ -499,7 +521,8 @@ body.tema-claro .filtro-fecha input[type="date"] { color-scheme: light; }
     justify-content: center;
     font-size: 1.3rem;
     font-weight: 800;
-    color: #fff;
+    background: var(--marca, var(--muted));
+    color: #0e1116;
     text-transform: uppercase;
 }
 

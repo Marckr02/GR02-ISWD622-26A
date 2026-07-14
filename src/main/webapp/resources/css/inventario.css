@@ -139,7 +139,8 @@ body {
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: var(--surface);
+    /* Fondo mas claro que el panel contenedor (--surface) para dar sensacion de elevacion/profundidad. */
+    background: var(--surface-2);
     border: 1px solid var(--border);
     border-left: 4px solid var(--border);
     border-radius: var(--radius);
@@ -153,9 +154,18 @@ body {
     box-shadow: 0 12px 28px rgba(0, 0, 0, .35);
     z-index: 2;
 }
-.insumo-card--rojo { border-left-color: var(--error); }
-.insumo-card--amarillo { border-left-color: var(--warn); }
-.insumo-card--verde { border-left-color: var(--ok); }
+.insumo-card--rojo {
+    border-left-color: var(--error);
+    background: linear-gradient(rgba(239, 68, 68, .08), rgba(239, 68, 68, .08)), var(--surface-2);
+}
+.insumo-card--amarillo {
+    border-left-color: var(--warn);
+    background: linear-gradient(rgba(245, 165, 36, .08), rgba(245, 165, 36, .08)), var(--surface-2);
+}
+.insumo-card--verde {
+    border-left-color: var(--ok);
+    background: linear-gradient(rgba(34, 197, 94, .05), rgba(34, 197, 94, .05)), var(--surface-2);
+}
 
 .insumo-card__estado {
     position: absolute;
@@ -198,16 +208,59 @@ body {
 }
 
 .insumo-card__cantidad {
+    display: flex;
+    align-items: center;
     margin-top: .5rem;
+}
+.insumo-card__cantidad-valor {
     font-size: 1.5rem;
     font-weight: 800;
     letter-spacing: -.02em;
+    color: var(--text);
 }
+/* El numero de cantidad adopta el color semantico del estado: mas visible que el punto/borde solos. */
+.insumo-card--rojo .insumo-card__cantidad-valor { color: var(--error); }
+.insumo-card--amarillo .insumo-card__cantidad-valor { color: var(--warn); }
+.insumo-card--verde .insumo-card__cantidad-valor { color: var(--ok); }
+
 .insumo-card__unidad {
     font-size: .88rem;
     font-weight: 600;
     color: var(--muted);
-    margin-left: .2rem;
+    margin-left: .3rem;
+}
+
+/* ---------- Acciones rapidas de stock (icono), a la derecha del numero de cantidad ---------- */
+.insumo-card__stock-acciones {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin-left: auto;
+    padding-left: .5rem;
+}
+.insumo-card__stock-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, transform .08s;
+}
+.insumo-card__stock-btn svg { width: 15px; height: 15px; }
+.insumo-card__stock-btn:active { transform: translateY(1px); }
+.insumo-card__stock-btn:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.insumo-card__stock-btn--add { color: var(--ok); }
+.insumo-card__stock-btn--add:hover, .insumo-card__stock-btn--add:focus-visible {
+    background: rgba(34, 197, 94, .14); border-color: var(--ok);
+}
+.insumo-card__stock-btn--reduce { color: var(--error); }
+.insumo-card__stock-btn--reduce:hover, .insumo-card__stock-btn--reduce:focus-visible {
+    background: rgba(239, 68, 68, .14); border-color: var(--error);
 }
 
 .insumo-card__minimo {
@@ -308,6 +361,35 @@ body {
     box-shadow: 0 0 0 3px rgba(34, 197, 94, .35);
 }
 
+/* ---------- Modales de stock (Añadir / Reducir): titulo centrado y con color semantico,
+   ademas de un display de solo lectura para el insumo en lugar de un select ---------- */
+.modal__titulo-centrado { text-align: center; margin: 0 0 1rem; }
+.modal__titulo--add { color: var(--ok); }
+.modal__titulo--reduce { color: var(--warn); }
+
+.modal__insumo-display { display: grid; gap: .35rem; }
+.modal__insumo-label {
+    font-size: .82rem; color: var(--muted); font-weight: 600;
+}
+.modal__insumo-nombre {
+    display: block;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .75rem 1rem;
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+/* El foco de "Cantidad" adopta el color semantico del modal: verde para añadir, ambar para reducir. */
+.modal--stock-add .form input:focus {
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, .35);
+}
+.modal--stock-reduce .form input:focus {
+    box-shadow: 0 0 0 3px rgba(245, 165, 36, .35);
+}
+
 .btn {
     display: inline-block;
     margin-top: .3rem;
@@ -338,12 +420,6 @@ body {
     margin-top: 0;
 }
 .btn--danger-ghost:hover { background: rgba(239, 68, 68, .1); filter: none; }
-
-/* ---------- Botones de accion global con icono (Añadir / Reducir stock) ---------- */
-.btn--icon { display: inline-flex; align-items: center; gap: .4rem; margin-top: 0; }
-.btn__icono { font-size: 1rem; line-height: 1; }
-.btn--add { background: var(--ok); color: #04231a; }
-.btn--reduce { background: var(--error); color: #ffffff; }
 
 /* ---------- Modal generico (crear / editar / confirmar / contacto) ---------- */
 .modal__acciones--split {

@@ -37,8 +37,13 @@ public class PedidoKanbanServlet extends HttpServlet {
             request.getSession().setAttribute("rol", rol.name());
         }
         for (EstadoPedido estado : EstadoPedido.values()) {
-            request.setAttribute("col_" + estado.name(), pedidoService.listarPorEstado(estado));
+            if (estado == EstadoPedido.ENTREGADO) {
+                request.setAttribute("col_ENTREGADO", pedidoService.listarEntregadosRecientes(10));
+            } else {
+                request.setAttribute("col_" + estado.name(), pedidoService.listarPorEstado(estado));
+            }
         }
+        request.setAttribute("historialEntregados", pedidoService.listarHistorialEntregados());
         request.setAttribute("policy", policy);
         request.setAttribute("restaurantes", restauranteService.listarRestaurantes());
         request.setAttribute("platos", platoService.listarPlatos());
