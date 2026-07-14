@@ -50,8 +50,6 @@ class ReporteServiceTest {
                 .thenReturn(List.of(new MetricaInsumo(1, "Harina de trigo", 1.5, "kg")));
         when(metricasService.obtenerInsumosMenosUtilizadosPorRestaurante(1))
                 .thenReturn(List.of(new MetricaInsumo(1, "Harina de trigo", 1.5, "kg")));
-        when(metricasService.obtenerResumenInsumosConsumidos(1))
-                .thenReturn(List.of(new MetricaInsumo(1, "Harina de trigo", 1.5, "kg")));
 
         byte[] pdf = reporteService.generarReportePDF(1);
 
@@ -66,8 +64,6 @@ class ReporteServiceTest {
         when(metricasService.obtenerMetricasGeneralesPlatos())
                 .thenReturn(List.of(new MetricaPlato(1, "Pizza Margarita", 3)));
         when(metricasService.obtenerMetricasGeneralesInsumos())
-                .thenReturn(List.of(new MetricaInsumo(1, "Harina de trigo", 0.9, "kg")));
-        when(metricasService.obtenerResumenGeneralInsumos())
                 .thenReturn(List.of(new MetricaInsumo(1, "Harina de trigo", 0.9, "kg")));
 
         byte[] pdf = reporteService.generarReportePDF(MetricasService.TODOS_LOS_RESTAURANTES);
