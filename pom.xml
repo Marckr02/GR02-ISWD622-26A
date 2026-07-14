@@ -26,6 +26,45 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Generacion de PDF (HU39). OpenPDF: fork LGPL/MPL de iText 2.1.7, sin
+             las restricciones AGPL de iText5/7; API en el paquete com.lowagie.text. -->
+        <dependency>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
+            <version>1.3.39</version>
+        </dependency>
+
+        <!-- Persistencia real (migracion de almacen en memoria a BD). H2 embebida:
+             sin servidor externo que instalar/configurar, corre igual local y en
+             Azure App Service. Modo archivo en runtime, modo memoria en los tests
+             (ver systemPropertyVariables del plugin surefire mas abajo). -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>2.2.224</version>
+        </dependency>
+
+        <!-- Pool de conexiones (evita abrir/cerrar una conexion fisica en cada
+             llamada a un DAO, que era la causa real de la lentitud). -->
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>5.1.0</version>
+        </dependency>
+
+        <!-- HikariCP exige slf4j-api en tiempo de ejecucion (SLF4J 1.7.x, que busca
+             una clase StaticLoggerBinder). Sin una implementacion de logging en el
+             classpath, Tomcat imprime "Failed to load class
+             org.slf4j.impl.StaticLoggerBinder" al arrancar. Este proyecto no usa
+             logs por consola, asi que se resuelve con la implementacion "no-op"
+             oficial de SLF4J: aporta la clase que faltaba y descarta cualquier log
+             en silencio, sin necesidad de configurar Logback/Log4j. -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-nop</artifactId>
+            <version>1.7.36</version>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -64,6 +103,13 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
+                <configuration>
+                    <!-- Los tests corren contra una BD H2 en memoria, aislada y descartable
+                         en cada ejecucion (nunca contra el archivo de datos real). -->
+                    <systemPropertyVariables>
+                        <db.url>jdbc:h2:mem:darkkitchen-test-${surefire.forkNumber};DB_CLOSE_DELAY=-1</db.url>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>

@@ -258,9 +258,20 @@
     </div>
 </div>
 
-<!-- Popover flotante con la receta completa, anclado al boton "+X mas" de la fila -->
-<div class="popover-ingredientes" id="popover-ingredientes" role="dialog" aria-label="Ingredientes completos" hidden>
-    <div class="popover-ingredientes__cuerpo" id="popover-ingredientes-cuerpo"></div>
+<!-- Modal centrado con la receta completa (ingredientes + cantidad), disparado desde el boton "+X mas" de la fila -->
+<div class="modal-overlay" id="modal-ingredientes" role="dialog" aria-modal="true" aria-labelledby="modal-ingredientes-titulo">
+    <div class="modal modal--ancho">
+        <h3 id="modal-ingredientes-titulo">Ingredientes del plato</h3>
+        <div class="modal__scroll">
+            <table class="tabla" id="tabla-ingredientes-modal">
+                <thead><tr><th>Insumo</th><th class="num">Cantidad</th></tr></thead>
+                <tbody id="modal-ingredientes-cuerpo"></tbody>
+            </table>
+        </div>
+        <div class="modal__acciones">
+            <button type="button" class="btn btn--ghost" id="modal-ingredientes-cerrar">Cerrar</button>
+        </div>
+    </div>
 </div>
 
 <script src="<%= ctx %>/resources/js/toast.js"></script>

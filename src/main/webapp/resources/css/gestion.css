@@ -130,6 +130,22 @@ body {
 .form__error { color: var(--error); font-size: .82rem; min-height: 1em; }
 .form__actions { display: flex; gap: .7rem; margin-top: .3rem; }
 
+/* ---------- Selector de color de marca: picker nativo + hex de solo apoyo ---------- */
+.campo-color { display: flex; align-items: center; gap: .6rem; width: 100%; }
+.campo-color input[type="color"] {
+    flex-shrink: 0;
+    width: 46px;
+    height: 38px;
+    padding: 3px;
+    cursor: pointer;
+}
+.campo-color__hex {
+    flex: 1 1 auto;
+    text-transform: uppercase;
+    font-family: "SFMono-Regular", Consolas, "Courier New", monospace;
+    letter-spacing: .03em;
+}
+
 .btn {
     padding: .7rem 1rem;
     border: none;
@@ -179,6 +195,8 @@ body {
     color: var(--muted);
 }
 .pill--sin { font-style: italic; }
+.pill--critico { background: rgba(239, 68, 68, .14); border-color: rgba(239, 68, 68, .35); color: var(--error); }
+.pill--bajo { background: rgba(245, 165, 36, .14); border-color: rgba(245, 165, 36, .35); color: var(--warn); }
 
 /* ---------- Receta dinamica (platos) ---------- */
 .receta { display: grid; gap: .6rem; }
@@ -270,6 +288,27 @@ body {
 }
 .gestion-toolbar__buscar .buscador { margin-bottom: 0; flex: 0 1 260px; max-width: 300px; }
 .gestion-toolbar__acciones { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; flex-shrink: 0; }
+.filtro-fecha {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    color: var(--muted);
+    font-size: .78rem;
+    font-weight: 600;
+}
+.filtro-fecha input[type="date"] {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: .38rem .7rem;
+    color: var(--text);
+    font-size: .82rem;
+    font-family: inherit;
+    color-scheme: dark;
+}
+body.tema-claro .filtro-fecha input[type="date"] { color-scheme: light; }
+.filtro-fecha input[type="date"]:focus { outline: 2px solid var(--warn); outline-offset: 1px; }
+
 .gestion-toolbar select {
     background: var(--surface-2);
     border: 1px solid var(--border);
@@ -327,30 +366,6 @@ body {
 }
 .pill--mas:hover, .pill--mas:focus-visible { background: var(--surface); border-color: var(--muted); color: #fff; }
 
-/* ---------- Popover flotante con la receta completa (boton "+X mas") ---------- */
-.popover-ingredientes {
-    position: fixed;
-    z-index: 60;
-    min-width: 220px;
-    max-width: 300px;
-    background: var(--surface-2);
-    border: 1px solid #333d4d;
-    border-radius: 10px;
-    box-shadow: 0 16px 36px rgba(0, 0, 0, .5);
-    padding: .8rem .9rem;
-}
-.popover-ingredientes[hidden] { display: none; }
-.popover-ingredientes__cuerpo { display: flex; flex-direction: column; gap: .5rem; }
-.popover-ingredientes__fila {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: .8rem;
-    font-size: .82rem;
-}
-.popover-ingredientes__nombre { color: var(--text); font-weight: 600; min-width: 0; overflow-wrap: break-word; }
-.popover-ingredientes__cantidad { flex-shrink: 0; color: var(--muted); white-space: nowrap; }
-
 /* ---------- Acciones de fila con iconos minimalistas ---------- */
 .tabla__accion-icono {
     display: inline-flex;
@@ -396,6 +411,7 @@ body {
     padding: 1.3rem 1.4rem;
 }
 .modal--plato { max-width: 640px; }
+.modal--ancho { max-width: 720px; }
 .modal h3 { margin: 0 0 .2rem; font-size: 1.1rem; flex-shrink: 0; }
 .modal p.hint { margin: 0 0 1rem; color: var(--muted); font-size: .82rem; flex-shrink: 0; }
 
@@ -483,11 +499,17 @@ body {
     width: 100%;
     background: var(--surface);
     border: 1px solid var(--border);
+    /* Acento estructural: borde izquierdo grueso con el color exacto de la marca
+       (asignado en el modal de edicion, o uno de respaldo mientras no se elija ninguno). */
+    border-left: 5px solid var(--marca, var(--border));
     border-radius: var(--radius);
     padding: 1rem 1.3rem;
-    transition: background .15s;
+    transition: background .15s, box-shadow .15s, transform .12s;
 }
-.marca-card:hover { background: var(--surface-2); }
+.marca-card:hover {
+    background: var(--surface-2);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--marca) 45%, transparent), 0 6px 18px rgba(0, 0, 0, .3);
+}
 
 .marca-card__avatar {
     flex-shrink: 0;
@@ -499,7 +521,8 @@ body {
     justify-content: center;
     font-size: 1.3rem;
     font-weight: 800;
-    color: #fff;
+    background: var(--marca, var(--muted));
+    color: #0e1116;
     text-transform: uppercase;
 }
 

@@ -83,4 +83,17 @@ public class Insumo {
     public boolean esCritico() {
         return stock < stockMinimo;
     }
+
+    /** Igualdad por id: dos instancias representan el mismo insumo si vienen de la misma fila en BD. */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) { return true; }
+        if (!(obj instanceof Insumo)) { return false; }
+        return id == ((Insumo) obj).id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id);
+    }
 }

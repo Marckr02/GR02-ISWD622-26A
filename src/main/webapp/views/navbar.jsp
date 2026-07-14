@@ -17,7 +17,7 @@
             visibles = Arrays.asList("tablero", "inventario", "monitoreo", "proveedores");
             break;
         case ADMINISTRADOR:
-            visibles = Arrays.asList("restaurantes", "platos", "alertas");
+            visibles = Arrays.asList("restaurantes", "platos", "alertas", "metricas");
             break;
         case COCINERO:
         default:
@@ -34,7 +34,8 @@
             {"proveedores",    "Proveedores",    "/proveedores"},
             {"restaurantes",   "Restaurantes",   "/restaurantes"},
             {"platos",         "Platos",         "/platos"},
-            {"alertas",        "Alertas",        "/alertas"}
+            {"alertas",        "Alertas",        "/alertas"},
+            {"metricas",       "Métricas",       "/metricas"}
     };
 
     // Pagina de aterrizaje de cada rol al cambiar de vista.

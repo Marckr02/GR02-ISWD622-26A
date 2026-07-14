@@ -64,4 +64,17 @@ public class AlertaStock {
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
     }
+
+    /** Igualdad por id: dos instancias representan la misma alerta si vienen de la misma fila en BD. */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) { return true; }
+        if (!(obj instanceof AlertaStock)) { return false; }
+        return id == ((AlertaStock) obj).id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id);
+    }
 }

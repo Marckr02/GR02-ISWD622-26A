@@ -27,6 +27,7 @@ public class PedidoService {
     private final InsumoDao insumoDao;
     private final RestauranteDao restauranteDao;
     private final ConversionUnidades conversionUnidades;
+    private final AlertaStockService alertaStockService;
 
     public PedidoService() {
         this(new PedidoDao());
@@ -41,11 +42,17 @@ public class PedidoService {
     }
 
     public PedidoService(PedidoDao pedidoDao, PlatoDao platoDao, InsumoDao insumoDao, RestauranteDao restauranteDao) {
+        this(pedidoDao, platoDao, insumoDao, restauranteDao, new AlertaStockService());
+    }
+
+    public PedidoService(PedidoDao pedidoDao, PlatoDao platoDao, InsumoDao insumoDao,
+                          RestauranteDao restauranteDao, AlertaStockService alertaStockService) {
         this.pedidoDao = pedidoDao;
         this.platoDao = platoDao;
         this.insumoDao = insumoDao;
         this.restauranteDao = restauranteDao;
         this.conversionUnidades = new ConversionUnidades();
+        this.alertaStockService = alertaStockService;
     }
 
     /** Pedidos de un estado concreto, usado para pintar cada columna del tablero. */
@@ -56,6 +63,17 @@ public class PedidoService {
     /** Columna inicial del tablero. */
     public List<Pedido> listarPedidosRecibidos() {
         return listarPorEstado(EstadoPedido.RECIBIDO);
+    }
+
+    /** Columna ENTREGADO del tablero: solo los mas recientes, para no sobrecargarla. */
+    public List<Pedido> listarEntregadosRecientes(int limite) {
+        List<Pedido> todos = pedidoDao.buscarPorEstadoRecientePrimero(EstadoPedido.ENTREGADO);
+        return todos.size() > limite ? todos.subList(0, limite) : todos;
+    }
+
+    /** Historial completo de entregados (mas reciente primero), para el modal de historial. */
+    public List<Pedido> listarHistorialEntregados() {
+        return pedidoDao.buscarPorEstadoRecientePrimero(EstadoPedido.ENTREGADO);
     }
 
     public List<Pedido> listarTodos() {
@@ -166,6 +184,9 @@ public class PedidoService {
             Insumo insumo = entry.getKey();
             insumo.setStock(Numeros.redondear(insumo.getStock() - entry.getValue()));
             insumoDao.actualizar(insumo);
+            if (alertaStockService != null) {
+                alertaStockService.evaluarYRegistrar(insumo);
+            }
         }
     }
 

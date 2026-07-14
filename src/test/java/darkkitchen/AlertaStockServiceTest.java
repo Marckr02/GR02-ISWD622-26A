@@ -75,4 +75,34 @@ class AlertaStockServiceTest {
 
         assertEquals(historial, resultado);
     }
+
+    @Test
+    void evaluarYRegistrarNoHaceNadaSiElInsumoNoEsCritico() {
+        Insumo normal = new Insumo(3, "Pan", "unidades", 100.0, 0.35, 20.0);
+
+        AlertaStock resultado = alertaStockService.evaluarYRegistrar(normal);
+
+        assertEquals(null, resultado);
+        verify(alertaStockDao, never()).guardar(any(AlertaStock.class));
+    }
+
+    @Test
+    void evaluarYRegistrarNoHaceNadaSiElInsumoEsNull() {
+        AlertaStock resultado = alertaStockService.evaluarYRegistrar(null);
+
+        assertEquals(null, resultado);
+        verify(alertaStockDao, never()).guardar(any(AlertaStock.class));
+    }
+
+    @Test
+    void evaluarYRegistrarRegistraCuandoElInsumoEstaPorDebajoDelMinimo() {
+        Insumo critico = new Insumo(4, "Albahaca fresca", "kg", 0.0, 3.0, 2.0);
+        when(alertaStockDao.buscarUltimaPorInsumo(4)).thenReturn(null);
+        when(alertaStockDao.guardar(any(AlertaStock.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        AlertaStock resultado = alertaStockService.evaluarYRegistrar(critico);
+
+        assertEquals(0.0, resultado.getStockAlMomento(), 0.0001);
+        verify(alertaStockDao, times(1)).guardar(any(AlertaStock.class));
+    }
 }
