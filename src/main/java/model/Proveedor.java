@@ -52,4 +52,17 @@ public class Proveedor {
     public void setCorreo(String correo) {
         this.correo = correo;
     }
+
+    /** Igualdad por id: dos instancias representan el mismo proveedor si vienen de la misma fila en BD. */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) { return true; }
+        if (!(obj instanceof Proveedor)) { return false; }
+        return id == ((Proveedor) obj).id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id);
+    }
 }
