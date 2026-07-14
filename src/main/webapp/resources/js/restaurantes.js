@@ -131,8 +131,37 @@
         var campoId = document.getElementById("restaurante-id");
         var campoNombre = document.getElementById("restaurante-nombre");
         var campoDescripcion = document.getElementById("restaurante-descripcion");
+        var campoColor = document.getElementById("restaurante-color");
+        var campoColorHex = document.getElementById("restaurante-color-hex");
         var btnCancelarRestaurante = document.getElementById("modal-restaurante-cancelar");
         var btnAbrirNuevo = document.getElementById("btn-abrir-nuevo");
+        var COLOR_POR_DEFECTO = "#f97316";
+
+        /** Normaliza un texto escrito a mano a "#RRGGBB", o null si no es un hex valido. */
+        function normalizarColorHex(valor) {
+            if (!valor) { return null; }
+            var limpio = valor.trim();
+            if (limpio.charAt(0) !== "#") { limpio = "#" + limpio; }
+            return /^#[0-9A-Fa-f]{6}$/.test(limpio) ? limpio.toUpperCase() : null;
+        }
+
+        function fijarColor(valorHex) {
+            var normalizado = normalizarColorHex(valorHex) || COLOR_POR_DEFECTO;
+            if (campoColor) { campoColor.value = normalizado; }
+            if (campoColorHex) { campoColorHex.value = normalizado; }
+        }
+
+        if (campoColor) {
+            campoColor.addEventListener("input", function () {
+                if (campoColorHex) { campoColorHex.value = campoColor.value.toUpperCase(); }
+            });
+        }
+        if (campoColorHex) {
+            campoColorHex.addEventListener("input", function () {
+                var normalizado = normalizarColorHex(campoColorHex.value);
+                if (normalizado && campoColor) { campoColor.value = normalizado; }
+            });
+        }
 
         function abrirModalRestaurante() {
             if (overlayRestaurante) { overlayRestaurante.style.display = "flex"; }
@@ -146,6 +175,7 @@
             if (campoId) { campoId.value = ""; }
             if (campoNombre) { campoNombre.value = ""; }
             if (campoDescripcion) { campoDescripcion.value = ""; }
+            fijarColor(COLOR_POR_DEFECTO);
             if (tituloRestaurante) { tituloRestaurante.textContent = "Nuevo restaurante"; }
             if (btnGuardarRestaurante) { btnGuardarRestaurante.textContent = "Guardar"; }
             abrirModalRestaurante();
@@ -156,6 +186,7 @@
             if (campoId) { campoId.value = boton.getAttribute("data-id"); }
             if (campoNombre) { campoNombre.value = boton.getAttribute("data-nombre"); }
             if (campoDescripcion) { campoDescripcion.value = boton.getAttribute("data-descripcion"); }
+            fijarColor(boton.getAttribute("data-color"));
             if (tituloRestaurante) { tituloRestaurante.textContent = "Editar restaurante"; }
             if (btnGuardarRestaurante) { btnGuardarRestaurante.textContent = "Guardar cambios"; }
             abrirModalRestaurante();
@@ -184,6 +215,9 @@
                 var campos = [{ clave: "Nombre", valor: campoNombre.value.trim() }];
                 if (campoDescripcion && campoDescripcion.value.trim()) {
                     campos.push({ clave: "Descripción", valor: campoDescripcion.value.trim() });
+                }
+                if (campoColor && campoColor.value) {
+                    campos.push({ clave: "Color de marca", valor: campoColor.value.toUpperCase() });
                 }
                 mostrarConfirmacion(formRestaurante, {
                     titulo: esEdicion ? "Confirmar cambios" : "Confirmar creación",

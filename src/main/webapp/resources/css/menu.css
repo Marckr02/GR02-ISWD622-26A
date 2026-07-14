@@ -103,65 +103,16 @@ body {
 .filtro-pill--error.is-on { color: var(--error); border-color: var(--error); }
 
 .menu-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
     padding: 1.2rem 1.8rem 2rem;
 }
 .panel .menu-grid { padding: 0; }
 
-.plato {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 1rem 1.1rem;
-    display: flex;
-    flex-direction: column;
-    gap: .55rem;
-    transition: opacity .15s, border-color .15s;
-}
-
-/* Efecto "ghosting": los platos bloqueados pasan a segundo plano para que
-   los disponibles resalten de inmediato. */
-.plato--bloqueado {
-    opacity: .65;
-    border-color: rgba(239, 68, 68, .35);
-}
-
-.plato__marca {
-    margin: 0;
-    color: var(--muted);
-    font-size: .74rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-}
-
-.plato__nombre { margin: 0; font-size: 1.05rem; }
-
-.estado {
-    align-self: flex-start;
-    font-size: .74rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-    padding: .28rem .7rem;
-    border-radius: 999px;
-    border: 1px solid transparent;
-}
-.estado--disponible { color: #052e16; background: var(--listo); }
-.estado--bloqueado  { color: #fff; background: var(--error); }
-
-.plato__motivo {
-    display: flex;
-    align-items: flex-start;
-    gap: .4rem;
-    margin: 0;
-    color: var(--muted);
-    font-size: .85rem;
-}
-.plato__motivo-icono { flex-shrink: 0; color: var(--error); line-height: 1.3; }
+/* El "plato" circular (.dish-circle y compania) vive en dish-circle.css,
+   compartida con el Panel de control y Menu y disponibilidad. */
 
 .menu-vacio {
     margin: 1.2rem 1.8rem;

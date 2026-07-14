@@ -9,6 +9,7 @@
     --preparacion: #3b82f6;
     --listo: #22c55e;
     --entregado: #64748b;
+    --surface-3: #212a35;
     --radius: 14px;
     --shadow: 0 6px 22px rgba(0, 0, 0, .35);
 }
@@ -73,10 +74,11 @@ body {
 .col {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-top: 3px solid var(--accent, var(--border));
+    border-top: 4px solid var(--accent, var(--border));
     border-radius: var(--radius);
     padding: 1rem;
     min-height: 200px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .2);
 }
 .col--RECIBIDO { --accent: var(--recibido); }
 .col--EN_PREPARACION { --accent: var(--preparacion); }
@@ -85,58 +87,181 @@ body {
 
 .col__head {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: .9rem;
+    margin-bottom: 1rem;
+    padding-bottom: .7rem;
+    border-bottom: 1px solid var(--border);
 }
 .col__head h2 {
     margin: 0; font-size: .92rem; text-transform: uppercase;
-    letter-spacing: .06em; color: var(--accent);
+    font-weight: 800; letter-spacing: .06em; color: var(--accent);
 }
+.col__head-derecha { display: flex; align-items: center; gap: .5rem; }
 .col__count {
     min-width: 26px; text-align: center;
-    font-size: .78rem; font-weight: 700;
+    font-size: .78rem; font-weight: 800;
     padding: .12rem .5rem; border-radius: 999px;
     background: var(--surface-2); color: var(--text);
 }
 
+/* Icono discreto para abrir el historial completo de la columna ENTREGADO. */
+.btn-historial {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px;
+    cursor: pointer; border: none; border-radius: 7px;
+    background: transparent; color: var(--muted);
+    transition: color .15s, background .15s;
+}
+.btn-historial svg { width: 15px; height: 15px; }
+.btn-historial:hover, .btn-historial:focus-visible { color: var(--text); background: var(--surface-2); }
+
 .col__cards { display: flex; flex-direction: column; gap: .7rem; }
 .col__empty { color: var(--muted); font-size: .82rem; font-style: italic; }
 
-.card {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 11px;
-    padding: .85rem .9rem;
-    box-shadow: var(--shadow);
+/* ---------- Ticket de comanda digital: papel oscuro con esquinas apenas
+   redondeadas (parece papel, no una tarjeta de UI generica). "overflow: hidden"
+   deja que .ticket-header (rectangulo simple, sin su propio radio) respete las
+   esquinas superiores redondeadas del ticket, y que las muescas de ::before/
+   ::after del corte se recorten limpio contra el borde. ---------- */
+.ticket-card {
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--surface-3);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, .3);
+    transition: transform .15s ease, box-shadow .15s ease;
     animation: aparece .25s ease both;
 }
-.card__id { font-size: .72rem; color: var(--muted); font-weight: 700; }
-.card__desc { margin: .25rem 0 .5rem; font-size: .92rem; line-height: 1.3; }
-.card__marca {
-    display: inline-block; font-size: .72rem; color: var(--accent);
-    border: 1px solid var(--accent); border-radius: 999px;
-    padding: .1rem .55rem; opacity: .9;
+.ticket-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, .38);
 }
 
-.card__action { margin-top: .7rem; }
-.card__action button {
+/* ---------- Encabezado de marca: fondo solido del color de la marca, nombre del
+   restaurante gigante y protagonista. El color de texto (blanco o casi negro) se
+   fija por ticket via estilo inline segun el brillo de esa marca especifica (ver
+   ColorMarca.textoLegibleSobre en la JSP); el valor de aca abajo es solo un
+   respaldo por si faltara ese calculo. ---------- */
+.ticket-header {
+    position: relative;
     width: 100%;
+    background: var(--marca, var(--muted));
+    color: #fff;
+    font-size: .82rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    text-align: center;
+    letter-spacing: .5px;
+    line-height: 1.2;
+    padding: 6px 10px;
+    border-bottom: 2px dashed rgba(255, 255, 255, .3);
+}
+
+/* Muescas perforadas: dos "mordidas" circulares del color de la columna, justo
+   en los extremos de la linea punteada, simulando el corte de un ticket real.
+   Mas pequenas para calzar con la franja de encabezado, ahora delgada. */
+.ticket-header::before, .ticket-header::after {
+    content: "";
+    position: absolute;
+    bottom: -5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--surface);
+}
+.ticket-header::before { left: -5px; }
+.ticket-header::after { right: -5px; }
+
+/* ---------- Cuerpo del pedido: mismo fondo oscuro base, informacion clara y
+   jerarquizada por debajo del encabezado de marca. ---------- */
+.ticket-body {
+    width: 100%;
+    background: var(--surface-3);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.card__id { font-size: .9rem; color: #888; font-weight: 600; }
+.card__desc { margin: 0; color: #fff; font-size: 1.15rem; font-weight: 700; line-height: 1.4; }
+
+.card__action { margin-top: .7rem; }
+
+/* ---------- Botones de accion de la tarjeta: solo icono + tooltip nativo (title) ---------- */
+.btn-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px;
     cursor: pointer;
     border: none;
-    border-radius: 9px;
-    padding: .55rem .6rem;
-    font-size: .82rem; font-weight: 600;
+    border-radius: 8px;
     color: #0e1116;
     background: var(--accent);
-    transition: transform .12s, filter .12s;
+    transition: transform .12s, filter .12s, background .15s, border-color .15s;
 }
-.card__action button:hover { filter: brightness(1.07); }
-.card__action button:active { transform: scale(.97); }
-.card__action button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.btn-icon svg { width: 16px; height: 16px; }
+.btn-icon:hover { filter: brightness(1.07); }
+.btn-icon:active { transform: scale(.94); }
+.btn-icon:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+.btn-icon--retro {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+}
+.btn-icon--retro:hover { color: var(--text); border-color: #3a4350; background: var(--surface); filter: none; }
+.btn-icon--cargando { opacity: .55; cursor: wait; animation: latido 1s ease-in-out infinite; }
 
 .card__done {
     display: inline-block; margin-top: .6rem;
     font-size: .78rem; color: var(--entregado); font-weight: 600;
 }
+
+/* ---------- Modal de historial completo de entregados ---------- */
+.modal--historial {
+    width: 100%; max-width: 640px; max-height: 82vh;
+    display: flex; flex-direction: column;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius, 14px);
+    box-shadow: var(--shadow);
+    animation: aparece .18s ease both;
+    overflow: hidden;
+}
+.modal--historial__cabecera {
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.modal--historial__cabecera h2 {
+    margin: 0; font-size: 1.05rem; text-align: center;
+}
+.btn-cerrar-modal {
+    position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px;
+    cursor: pointer; border: none; border-radius: 8px;
+    background: transparent; color: var(--muted);
+    transition: color .15s, background .15s;
+}
+.btn-cerrar-modal svg { width: 16px; height: 16px; }
+.btn-cerrar-modal:hover, .btn-cerrar-modal:focus-visible { color: var(--text); background: var(--surface-2); }
+
+.modal--historial__cuerpo { padding: 1.2rem 1.5rem 1.5rem; overflow-y: auto; }
+
+.tabla-historial { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.tabla-historial th {
+    text-align: left; color: var(--muted); font-weight: 700;
+    font-size: .74rem; text-transform: uppercase; letter-spacing: .04em;
+    padding: 0 .6rem .6rem; border-bottom: 1px solid var(--border);
+}
+.tabla-historial td {
+    padding: .6rem; border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+.tabla-historial tr:last-child td { border-bottom: none; }
 
 .pase-bottom { padding: 0 1.8rem 2.5rem; }
 .pase-bottom a { color: var(--preparacion); text-decoration: none; font-weight: 600; font-size: .9rem; }
