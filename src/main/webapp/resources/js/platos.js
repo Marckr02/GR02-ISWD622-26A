@@ -6,7 +6,7 @@
  *    scroll interno para la lista de ingredientes;
  *  - modal generico de confirmacion antes de guardar o eliminar, reutilizado
  *    por los tres flujos;
- *  - popover de la receta completa ("+X mas").
+ *  - modal centrado con la receta completa, insumo y cantidad ("+X mas").
  * Las notificaciones de exito/error usan el Toast Manager global (toast.js),
  * no un componente propio de esta vista. Nada de esto usa AJAX: cada accion
  * confirmada envia el formulario real
@@ -23,41 +23,21 @@
     }
 
     /**
-     * Popover flotante anclado al boton "+X mas" de cada fila: muestra la
-     * receta completa sin sacar al usuario de la tabla. Se posiciona con
-     * getBoundingClientRect() (sin libreria externa), se recoloca si no cabe
-     * en pantalla, y se cierra al hacer clic fuera, con Escape, al hacer
-     * scroll/resize o al volver a pulsar el mismo boton.
+     * Modal centrado disparado desde el boton "+X mas" de cada fila: muestra
+     * la receta completa (insumo y cantidad) del plato, con el mismo
+     * componente modal-overlay (fondo oscuro/backdrop-blur) del resto del
+     * sistema, en vez de un popover anclado.
      */
-    function activarPopoverIngredientes() {
-        var popover = document.getElementById("popover-ingredientes");
-        var cuerpo = document.getElementById("popover-ingredientes-cuerpo");
-        if (!popover || !cuerpo) {
+    function activarModalIngredientes() {
+        var overlay = document.getElementById("modal-ingredientes");
+        var cuerpo = document.getElementById("modal-ingredientes-cuerpo");
+        var btnCerrar = document.getElementById("modal-ingredientes-cerrar");
+        if (!overlay || !cuerpo) {
             return;
         }
-        var botonActivo = null;
 
         function cerrar() {
-            popover.hidden = true;
-            botonActivo = null;
-        }
-
-        function posicionar(boton) {
-            var rect = boton.getBoundingClientRect();
-            var ancho = popover.offsetWidth;
-            var alto = popover.offsetHeight;
-            var margen = 10;
-
-            var left = rect.left;
-            if (left + ancho > window.innerWidth - margen) {
-                left = Math.max(margen, window.innerWidth - ancho - margen);
-            }
-            var top = rect.bottom + 6;
-            if (top + alto > window.innerHeight - margen) {
-                top = rect.top - alto - 6;
-            }
-            popover.style.left = left + "px";
-            popover.style.top = top + "px";
+            overlay.style.display = "none";
         }
 
         function abrir(boton) {
@@ -70,48 +50,34 @@
 
             cuerpo.innerHTML = "";
             ingredientes.forEach(function (ing) {
-                var fila = document.createElement("div");
-                fila.className = "popover-ingredientes__fila";
+                var fila = document.createElement("tr");
 
-                var nombre = document.createElement("span");
-                nombre.className = "popover-ingredientes__nombre";
-                nombre.textContent = ing.nombre;
+                var celdaNombre = document.createElement("td");
+                celdaNombre.textContent = ing.nombre;
 
-                var cantidad = document.createElement("span");
-                cantidad.className = "popover-ingredientes__cantidad";
-                cantidad.textContent = ing.cantidad + " " + ing.unidad;
+                var celdaCantidad = document.createElement("td");
+                celdaCantidad.className = "num";
+                celdaCantidad.textContent = ing.cantidad + " " + ing.unidad;
 
-                fila.appendChild(nombre);
-                fila.appendChild(cantidad);
+                fila.appendChild(celdaNombre);
+                fila.appendChild(celdaCantidad);
                 cuerpo.appendChild(fila);
             });
 
-            popover.hidden = false;
-            posicionar(boton);
-            botonActivo = boton;
+            overlay.style.display = "flex";
         }
 
         document.querySelectorAll(".pill--mas").forEach(function (boton) {
             boton.addEventListener("click", function (e) {
                 e.stopPropagation();
-                if (botonActivo === boton) {
-                    cerrar();
-                    return;
-                }
                 abrir(boton);
             });
         });
 
-        document.addEventListener("click", function (e) {
-            if (!popover.hidden && !popover.contains(e.target)) {
-                cerrar();
-            }
+        if (btnCerrar) { btnCerrar.addEventListener("click", cerrar); }
+        overlay.addEventListener("click", function (e) {
+            if (e.target === overlay) { cerrar(); }
         });
-        document.addEventListener("keydown", function (e) {
-            if (e.key === "Escape") { cerrar(); }
-        });
-        window.addEventListener("scroll", cerrar, true);
-        window.addEventListener("resize", cerrar);
     }
 
     /** Filtro por restaurante + busqueda por nombre, combinados, sobre las filas de la tabla de platos. */
@@ -149,7 +115,7 @@
 
     document.addEventListener("DOMContentLoaded", function () {
         activarFiltroRestaurante();
-        activarPopoverIngredientes();
+        activarModalIngredientes();
 
         // ---------- Receta dinamica dentro del modal (nuevo / editar) ----------
         var contenedor = document.getElementById("receta-filas");
