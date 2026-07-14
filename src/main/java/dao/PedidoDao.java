@@ -86,6 +86,47 @@ public class PedidoDao {
         }
     }
 
+    /** Igual que {@link #buscarPorEstado}, pero mas reciente primero (usado por la columna
+     *  ENTREGADO del tablero y su modal de historial completo). */
+    public List<Pedido> buscarPorEstadoRecientePrimero(EstadoPedido estado) {
+        String sql = "SELECT id, descripcion, marca, plato_id, estado, creado_en FROM pedidos "
+                + "WHERE estado = ? ORDER BY creado_en DESC, id DESC";
+        List<Pedido> resultado = new ArrayList<>();
+        try (Connection con = ConexionBD.obtenerConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, estado.name());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    resultado.add(mapear(rs));
+                }
+            }
+            return resultado;
+        } catch (SQLException ex) {
+            throw new IllegalStateException("No se pudo buscar los pedidos por estado", ex);
+        }
+    }
+
+    /**
+     * Renombra la marca de todos los pedidos existentes que la tengan (el nombre del
+     * restaurante se copia en "marca" al crear el pedido, no es una referencia viva),
+     * para que el tablero Kanban refleje el nombre nuevo tras editar un restaurante.
+     * No hace nada si nombreAnterior es null o no cambio.
+     */
+    public void renombrarMarca(String nombreAnterior, String nombreNuevo) {
+        if (nombreAnterior == null || nombreAnterior.equals(nombreNuevo)) {
+            return;
+        }
+        String sql = "UPDATE pedidos SET marca = ? WHERE marca = ?";
+        try (Connection con = ConexionBD.obtenerConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, nombreNuevo);
+            ps.setString(2, nombreAnterior);
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            throw new IllegalStateException("No se pudo actualizar la marca de los pedidos", ex);
+        }
+    }
+
     public void actualizar(Pedido pedido) {
         String sql = "UPDATE pedidos SET descripcion = ?, marca = ?, plato_id = ?, estado = ?, creado_en = ? WHERE id = ?";
         try (Connection con = ConexionBD.obtenerConexion();

@@ -4,10 +4,23 @@
 <%@ page import="model.EstadoPlato" %>
 <%@ page import="model.Restaurante" %>
 <%@ page import="service.RestauranteService" %>
+<%@ page import="util.ColorMarca" %>
 <%
     List<DisponibilidadPlato> menu = (List<DisponibilidadPlato>) request.getAttribute("menu");
     RestauranteService restauranteService = (RestauranteService) request.getAttribute("restauranteService");
     String ctx = request.getContextPath();
+%>
+<%!
+    /** Color de marca del restaurante (el asignado, o uno de respaldo si no tiene o no existe). */
+    private String colorDeMarca(Restaurante r) {
+        if (r == null) { return "#8b97a6"; }
+        return (r.getColor() != null && !r.getColor().isBlank()) ? r.getColor() : ColorMarca.paraNombre(r.getNombre());
+    }
+
+    /** Escapa comillas dobles para poder incrustar el valor dentro de un atributo HTML. */
+    private String attr(String valor) {
+        return valor == null ? "" : valor.replace("\"", "&quot;");
+    }
 %>
 <!DOCTYPE html>
 <html lang="es">
@@ -16,6 +29,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Disponibilidad del turno | Dark Kitchen</title>
     <link rel="stylesheet" href="<%= ctx %>/resources/css/menu.css">
+    <link rel="stylesheet" href="<%= ctx %>/resources/css/dish-circle.css">
     <link rel="stylesheet" href="<%= ctx %>/resources/css/main.css">
 </head>
 <body>
@@ -44,17 +58,20 @@
                 <% for (DisponibilidadPlato d : menu) {
                        boolean bloqueado = d.getEstado() == EstadoPlato.BLOQUEADO;
                        Restaurante restaurante = (restauranteService == null) ? null
-                               : restauranteService.buscar(d.getPlato().getRestauranteId()); %>
-                    <article class="plato <%= bloqueado ? "plato--bloqueado" : "" %>"
+                               : restauranteService.buscar(d.getPlato().getRestauranteId());
+                       String nombreMarca = restaurante == null ? "Sin marca" : restaurante.getNombre(); %>
+                    <article class="dish-circle <%= bloqueado ? "dish-circle--bloqueado" : "" %>"
                              data-estado="<%= bloqueado ? "bloqueado" : "disponible" %>"
-                             data-nombre="<%= d.getPlato().getNombre().toLowerCase() %>">
-                        <p class="plato__marca"><%= restaurante == null ? "Sin marca" : restaurante.getNombre() %></p>
-                        <h2 class="plato__nombre"><%= d.getPlato().getNombre() %></h2>
+                             data-nombre="<%= d.getPlato().getNombre().toLowerCase() %>"
+                             style="--marca: <%= colorDeMarca(restaurante) %>;">
+                        <p class="dish-circle__marca"><%= nombreMarca %></p>
+                        <h3 class="dish-circle__nombre"><%= d.getPlato().getNombre() %></h3>
                         <span class="estado <%= bloqueado ? "estado--bloqueado" : "estado--disponible" %>">
                             <%= d.getEstado().getEtiqueta() %>
                         </span>
                         <% if (bloqueado) { %>
-                            <p class="plato__motivo"><span class="plato__motivo-icono" aria-hidden="true">&#9888;</span><%= d.getMotivo() %></p>
+                            <button type="button" class="dish-circle__alerta" title="Ver insumos faltantes"
+                                    aria-label="Ver insumos faltantes" data-motivo="<%= attr(d.getMotivo()) %>">&#9888;</button>
                         <% } %>
                     </article>
                 <% } %>
@@ -63,6 +80,7 @@
         </section>
     </main>
 <% } %>
+<script src="<%= ctx %>/resources/js/menu-filtros.js"></script>
 <script src="<%= ctx %>/resources/js/disponibilidad.js"></script>
 </body>
 </html>

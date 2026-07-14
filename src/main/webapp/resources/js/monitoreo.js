@@ -1,45 +1,11 @@
 /**
  * Panel de control (HU7 + HU9 fusionados): filtro rapido de platos por
- * estado (todos / disponibles / bloqueados) y popover de "Contactar
- * proveedor" para cada insumo critico, sin salir de la pantalla.
+ * estado (todos / disponibles / bloqueados, logica compartida en
+ * menu-filtros.js), popover de insumos faltantes en platos bloqueados, y
+ * popover de "Contactar proveedor" para cada insumo critico.
  */
 (function () {
     "use strict";
-
-    /** Filtro por estado sobre las tarjetas de plato del panel derecho. */
-    function activarFiltroMenu() {
-        var grid = document.getElementById("menu-grid");
-        var pills = document.querySelectorAll("#filtros-menu .filtro-pill");
-        var sinResultados = document.getElementById("sin-resultados-menu");
-        if (!grid) {
-            return;
-        }
-        var filtroActivo = "todos";
-
-        function aplicar() {
-            var tarjetas = grid.querySelectorAll(".plato");
-            var visibles = 0;
-            Array.prototype.forEach.call(tarjetas, function (tarjeta) {
-                var visible = filtroActivo === "todos" || tarjeta.getAttribute("data-estado") === filtroActivo;
-                tarjeta.style.display = visible ? "" : "none";
-                if (visible) { visibles += 1; }
-            });
-            if (sinResultados) {
-                sinResultados.hidden = visibles !== 0;
-            }
-        }
-
-        pills.forEach(function (pill) {
-            pill.addEventListener("click", function () {
-                pills.forEach(function (p) { p.classList.remove("is-on"); });
-                pill.classList.add("is-on");
-                filtroActivo = pill.getAttribute("data-filtro");
-                aplicar();
-            });
-        });
-
-        aplicar();
-    }
 
     /** Popover de contacto de proveedor desde la tabla de insumos criticos. */
     function activarContactoProveedor() {
@@ -97,7 +63,13 @@
     }
 
     document.addEventListener("DOMContentLoaded", function () {
-        activarFiltroMenu();
+        if (window.activarFiltrosMenu) {
+            window.activarFiltrosMenu({ buscadorId: "buscador-menu-monitoreo", selectMarcaId: "filtro-marca-menu" });
+        }
+        if (window.activarFiltrosInsumosCriticos) {
+            window.activarFiltrosInsumosCriticos({ buscadorId: "buscador-criticos" });
+        }
+        if (window.activarPopoverFaltantes) { window.activarPopoverFaltantes(); }
         activarContactoProveedor();
     });
 })();

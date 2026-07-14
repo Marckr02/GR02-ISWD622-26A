@@ -54,39 +54,28 @@ class RestauranteServletTest {
     }
 
     @Test
-    void doGetConAccionNuevaReenviaAlFormularioDeAlta() throws Exception {
+    void doGetConAccionNuevaListaRestaurantesYReenviaAlListado() throws Exception {
+        // El alta ahora vive solo en el modal de cu27: ya no existe una pagina propia (cu26).
         when(request.getParameter("accion")).thenReturn("nueva");
-        when(request.getRequestDispatcher("/views/cu26-registrar-restaurante.jsp")).thenReturn(dispatcher);
+        when(request.getRequestDispatcher("/views/cu27-listado-restaurantes.jsp")).thenReturn(dispatcher);
 
         servlet.doGet(request, response);
 
+        verify(request).setAttribute(eq("restaurantes"), notNull());
         verify(dispatcher).forward(request, response);
     }
 
     @Test
-    void doGetEditarConRestauranteExistenteMuestraElFormularioDeEdicion() throws Exception {
-        Restaurante restaurante = restauranteService.registrarRestaurante(
-                "Restaurante prueba " + System.nanoTime(), "Descripcion de prueba");
+    void doGetConAccionEditarListaRestaurantesYReenviaAlListado() throws Exception {
+        // La edicion ahora vive solo en el modal de cu27 (con selector de color incluido);
+        // ya no existe una pagina propia (cu28).
         when(request.getParameter("accion")).thenReturn("editar");
-        when(request.getParameter("id")).thenReturn(String.valueOf(restaurante.getId()));
-        when(request.getRequestDispatcher("/views/cu28-editar-restaurante.jsp")).thenReturn(dispatcher);
+        when(request.getRequestDispatcher("/views/cu27-listado-restaurantes.jsp")).thenReturn(dispatcher);
 
         servlet.doGet(request, response);
 
-        verify(request).setAttribute("restaurante", restaurante);
+        verify(request).setAttribute(eq("restaurantes"), notNull());
         verify(dispatcher).forward(request, response);
-    }
-
-    @Test
-    void doGetEditarConIdInexistenteRedirigeAlListado() throws Exception {
-        when(request.getParameter("accion")).thenReturn("editar");
-        when(request.getParameter("id")).thenReturn("999999");
-        when(request.getParameter("rol")).thenReturn(null);
-        when(request.getContextPath()).thenReturn("");
-
-        servlet.doGet(request, response);
-
-        verify(response).sendRedirect("/restaurantes");
     }
 
     @Test
@@ -105,7 +94,7 @@ class RestauranteServletTest {
     }
 
     @Test
-    void doPostGuardarConNombreVacioDejaErrorYRedirigeAlFormularioDeAlta() throws Exception {
+    void doPostGuardarConNombreVacioDejaErrorYRedirigeAlListado() throws Exception {
         when(request.getParameter("accion")).thenReturn("guardar");
         when(request.getParameter("nombre")).thenReturn("   ");
         when(request.getParameter("descripcion")).thenReturn("");
@@ -116,7 +105,7 @@ class RestauranteServletTest {
         servlet.doPost(request, response);
 
         verify(session).setAttribute("error", "El nombre no puede estar vacio");
-        verify(response).sendRedirect("/restaurantes?accion=nueva");
+        verify(response).sendRedirect("/restaurantes");
     }
 
     @Test

@@ -1,5 +1,6 @@
 package darkkitchen;
 
+import dao.PedidoDao;
 import dao.PlatoDao;
 import dao.RestauranteDao;
 import model.Restaurante;
@@ -31,6 +32,9 @@ class RestauranteServiceActualizarEliminarTest {
 
     @Mock
     private PlatoDao platoDao;
+
+    @Mock
+    private PedidoDao pedidoDao;
 
     @InjectMocks
     private RestauranteService restauranteService;
@@ -70,6 +74,32 @@ class RestauranteServiceActualizarEliminarTest {
         assertEquals("Nombre Nuevo Rest", actualizado.getNombre());
         assertEquals("Desc Nueva", actualizado.getDescripcion());
         verify(restauranteDao).actualizar(existente);
+        // El nombre cambio: los pedidos ya existentes con la marca vieja deben renombrarse.
+        verify(pedidoDao).renombrarMarca("Nombre Viejo", "Nombre Nuevo Rest");
+    }
+
+    @Test
+    void actualizarRestauranteSinCambiarElNombreNoTocaLosPedidos() {
+        Restaurante existente = new Restaurante(9, "Nombre Estable", "Desc Vieja");
+        when(restauranteDao.buscarPorId(9)).thenReturn(existente);
+        when(restauranteDao.buscarPorNombre("Nombre Estable")).thenReturn(existente);
+
+        restauranteService.actualizarRestaurante(9, "Nombre Estable", "Desc Nueva");
+
+        verify(pedidoDao, org.mockito.Mockito.never()).renombrarMarca(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
+    void actualizarRestauranteSinColorPreservaElColorActual() {
+        // Regresion: la pagina de edicion legacy (sin campo de color) no debe borrar
+        // el color de marca ya asignado al actualizar solo nombre/descripcion.
+        Restaurante existente = new Restaurante(8, "Nombre Viejo", "Desc Vieja", "#F97316");
+        when(restauranteDao.buscarPorId(8)).thenReturn(existente);
+        when(restauranteDao.buscarPorNombre("Nombre Nuevo Rest 2")).thenReturn(null);
+
+        Restaurante actualizado = restauranteService.actualizarRestaurante(8, "Nombre Nuevo Rest 2", "Desc Nueva");
+
+        assertEquals("#F97316", actualizado.getColor());
     }
 
     @Test

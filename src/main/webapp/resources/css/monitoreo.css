@@ -74,6 +74,36 @@ body {
 }
 .mon-contacto:hover { color: var(--warn); border-color: var(--warn); background: var(--surface-2); }
 
+/* ---------- Indicador de estado del stock (punto de color), igual que en Inventario ---------- */
+.status-dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    min-width: 9px;
+    border-radius: 50%;
+    margin-right: .5rem;
+    vertical-align: middle;
+    flex: none;
+}
+.status-dot--rojo { background: var(--error); box-shadow: 0 0 0 3px rgba(239, 68, 68, .18); }
+.status-dot--amarillo { background: var(--warn); box-shadow: 0 0 0 3px rgba(245, 165, 36, .18); }
+.status-dot--verde { background: var(--listo); box-shadow: 0 0 0 3px rgba(34, 197, 94, .18); }
+
+/* ---------- Buscador + filtros por nivel de stock de "Insumos criticos", en una
+   sola fila: el buscador aprovecha el espacio libre a la izquierda y las
+   pildoras de filtro quedan pegadas a la derecha. ---------- */
+.ins-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: .9rem;
+}
+.ins-toolbar .buscador { flex: 0 1 220px; max-width: 240px; }
+.filtros-stock { display: flex; gap: .5rem; flex-wrap: wrap; margin-left: auto; }
+.filtros-stock .filtro-pill--rojo.is-on { color: var(--error); border-color: var(--error); }
+.filtros-stock .filtro-pill--amarillo.is-on { color: var(--warn); border-color: var(--warn); }
+
 /* ---------- Panel derecho: cabecera + filtros + grid de platos ---------- */
 .panel--menu__cabecera {
     display: flex;
@@ -85,7 +115,8 @@ body {
 }
 .panel--menu__cabecera h2 { margin: 0; }
 
-.filtros-menu { display: flex; gap: .4rem; flex-wrap: wrap; }
+/* Pegados a la derecha de la fila de busqueda/selector (ver .menu-toolbar__buscar). */
+.filtros-menu { display: flex; gap: .4rem; flex-wrap: wrap; margin-left: auto; }
 .filtro-pill {
     display: inline-flex;
     align-items: center;
@@ -106,51 +137,114 @@ body {
 .filtro-pill--ok.is-on { color: var(--listo); border-color: var(--listo); }
 .filtro-pill--error.is-on { color: var(--error); border-color: var(--error); }
 
-.menu-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.15rem;
+/* ---------- Barra de busqueda de platos, igual al buscador de Inventario/Disponibilidad ---------- */
+.menu-toolbar__buscar {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+    margin-bottom: .7rem;
 }
-
-.plato {
+.buscador { position: relative; flex: 0 1 240px; max-width: 280px; }
+.buscador::before {
+    content: "\1F50D";
+    position: absolute;
+    left: .85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: .78rem;
+    opacity: .55;
+    pointer-events: none;
+}
+.input-filtro {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
     background: var(--surface-2);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.25rem 1.35rem;
-    display: flex;
-    flex-direction: column;
-    gap: .65rem;
-    transition: box-shadow .15s, border-color .15s;
+    border-radius: 8px;
+    padding: .55rem .7rem .55rem 2.15rem;
+    color: var(--text);
+    font-size: .85rem;
+    font-family: inherit;
+    transition: border-color .15s, background .15s, box-shadow .15s;
 }
-.plato:hover { box-shadow: var(--shadow); border-color: #333d4d; }
-
-.plato__cabecera { display: flex; align-items: flex-start; justify-content: space-between; gap: .6rem; }
-.plato__titulo { min-width: 0; }
-.plato__marca {
-    margin: 0 0 .2rem;
-    color: var(--muted);
-    font-size: .74rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-    overflow-wrap: break-word;
+.input-filtro::placeholder { color: var(--muted); }
+.input-filtro:hover { border-color: var(--muted); }
+.input-filtro:focus {
+    outline: none;
+    border-color: transparent;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, .35);
 }
-.plato__nombre { margin: 0; font-size: 1.05rem; font-weight: 700; overflow-wrap: break-word; }
 
-.estado {
-    flex-shrink: 0;
-    font-size: .68rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-    padding: .28rem .65rem;
+/* ---------- Filtro por restaurante/marca: selector nativo con forma de pildora
+   (fondo oscuro, borde redondeado, flecha propia) en vez de un grupo de botones. ---------- */
+.selector-marca { position: relative; display: inline-block; }
+.selector-marca select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    display: block;
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 999px;
-    white-space: nowrap;
+    padding: .5rem 2.3rem .5rem 1.1rem;
+    font-size: .82rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
 }
-.estado--disponible { color: #052e16; background: var(--listo); }
-.estado--bloqueado  { color: #fff; background: var(--error); }
+.selector-marca select:hover { border-color: var(--muted); }
+.selector-marca select:focus {
+    outline: none;
+    border-color: transparent;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, .35);
+}
+.selector-marca::after {
+    content: "";
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid var(--muted);
+    border-bottom: 2px solid var(--muted);
+    transform: translateY(-70%) rotate(45deg);
+    pointer-events: none;
+}
 
-.plato__motivo { margin: 0; color: var(--warn); font-size: .82rem; line-height: 1.4; }
+/* Exactamente 4 platos por fila: a diferencia de Disponibilidad (flex-wrap con
+   circulos de tamano fijo), aca el espacio es reducido, asi que se fuerza la
+   columna con grid y se escala el circulo para que siga siendo legible. */
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    justify-content: center;
+}
+
+/* El "plato" circular (.dish-circle y compania) vive en dish-circle.css,
+   compartida con Disponibilidad y Menu y disponibilidad; aca se reescala para
+   caber exactamente 4 por fila dentro del panel--menu (mas angosto). */
+.panel--menu .dish-circle {
+    width: 100%;
+    max-width: 190px;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    margin: 0 auto;
+    padding: clamp(.8rem, 8%, 1.3rem);
+}
+.panel--menu .dish-circle__marca { font-size: clamp(.6rem, 2.4vw, .7rem); }
+.panel--menu .dish-circle__nombre { font-size: clamp(.8rem, 3.2vw, .95rem); margin: .3rem 0; }
+.panel--menu .estado { font-size: clamp(.56rem, 2vw, .64rem); padding: .22rem .55rem; }
+.panel--menu .dish-circle__alerta { width: 22px; height: 22px; font-size: .72rem; margin-top: .35rem; }
+
+@media (max-width: 900px) {
+    .panel--menu .menu-grid { grid-template-columns: repeat(2, 1fr); }
+}
 
 .vacio {
     margin: .4rem 0 0;

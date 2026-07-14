@@ -9,4 +9,36 @@
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
+
+    <!-- El orden importa: CodificacionFilter debe ejecutarse ANTES que cualquier filtro
+         que lea request.getParameter(...) (como AuthFilter), porque una vez que se lee
+         un parametro con la codificacion por defecto del contenedor, ya no se puede
+         cambiar. Con @WebFilter en ambas clases el orden entre ellas no esta garantizado;
+         declarandolos aqui, en este orden, se fija de forma explicita. -->
+    <filter>
+        <filter-name>CodificacionFilter</filter-name>
+        <filter-class>config.CodificacionFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>CodificacionFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>AuthFilter</filter-name>
+        <filter-class>config.AuthFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/insumos</url-pattern>
+        <url-pattern>/menu</url-pattern>
+        <url-pattern>/monitoreo</url-pattern>
+        <url-pattern>/disponibilidad</url-pattern>
+        <url-pattern>/proveedores</url-pattern>
+        <url-pattern>/restaurantes</url-pattern>
+        <url-pattern>/platos</url-pattern>
+        <url-pattern>/alertas</url-pattern>
+        <url-pattern>/metricas</url-pattern>
+        <url-pattern>/reporte</url-pattern>
+    </filter-mapping>
 </web-app>

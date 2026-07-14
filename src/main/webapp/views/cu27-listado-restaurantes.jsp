@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.List" %>
 <%@ page import="model.Restaurante" %>
+<%@ page import="util.ColorMarca" %>
 <%
     List<Restaurante> restaurantes = (List<Restaurante>) request.getAttribute("restaurantes");
     String ctx = request.getContextPath();
@@ -16,19 +17,15 @@
     if (error != null) { session.removeAttribute("error"); }
 %>
 <%!
-    /** Gradientes suaves para el avatar; se elige uno de forma estable segun el nombre de la marca. */
-    private static final String[] AVATAR_GRADIENTES = {
-        "linear-gradient(135deg,#f97316,#c2410c)",
-        "linear-gradient(135deg,#22c55e,#15803d)",
-        "linear-gradient(135deg,#38bdf8,#0369a1)",
-        "linear-gradient(135deg,#a78bfa,#6d28d9)",
-        "linear-gradient(135deg,#f472b6,#be185d)",
-        "linear-gradient(135deg,#f5a524,#b45309)",
-    };
-
-    private String avatarGradiente(String nombre) {
-        int hash = (nombre == null) ? 0 : Math.abs(nombre.hashCode());
-        return AVATAR_GRADIENTES[hash % AVATAR_GRADIENTES.length];
+    /** Color efectivo de la marca: el asignado explicitamente (persistido en BD; ver
+     *  {@link dao.ConexionBD}, que ya rellena este campo para todo restaurante sin
+     *  color al arrancar), o el mismo respaldo determinista que usa el resto del
+     *  sistema como ultimo recurso. */
+    private String colorEfectivo(Restaurante r) {
+        if (r.getColor() != null && !r.getColor().isBlank()) {
+            return r.getColor();
+        }
+        return ColorMarca.paraNombre(r.getNombre());
     }
 
     private String inicial(String nombre) {
@@ -96,9 +93,10 @@
             <div class="marca-lista" id="lista-restaurantes">
                 <% for (Restaurante r : restaurantes) {
                        String descripcion = (r.getDescripcion() == null || r.getDescripcion().isEmpty())
-                               ? "Sin descripción" : r.getDescripcion(); %>
-                    <article class="marca-card" data-nombre="<%= attr(r.getNombre().toLowerCase()) %>">
-                        <div class="marca-card__avatar" style="background: <%= avatarGradiente(r.getNombre()) %>;">
+                               ? "Sin descripción" : r.getDescripcion();
+                       String colorMarca = colorEfectivo(r); %>
+                    <article class="marca-card" data-nombre="<%= attr(r.getNombre().toLowerCase()) %>" style="--marca: <%= colorMarca %>;">
+                        <div class="marca-card__avatar">
                             <%= inicial(r.getNombre()) %>
                         </div>
                         <div class="marca-card__info">
@@ -109,7 +107,8 @@
                             <button type="button" class="tabla__accion-icono marca-editar" title="Editar restaurante" aria-label="Editar restaurante"
                                     data-id="<%= r.getId() %>"
                                     data-nombre="<%= attr(r.getNombre()) %>"
-                                    data-descripcion="<%= attr(r.getDescripcion() == null ? "" : r.getDescripcion()) %>">&#9998;</button>
+                                    data-descripcion="<%= attr(r.getDescripcion() == null ? "" : r.getDescripcion()) %>"
+                                    data-color="<%= attr(colorMarca) %>">&#9998;</button>
                             <button type="button" class="tabla__accion-icono tabla__accion-icono--eliminar marca-eliminar" title="Eliminar restaurante" aria-label="Eliminar restaurante"
                                     data-id="<%= r.getId() %>"
                                     data-nombre="<%= attr(r.getNombre()) %>">&#128465;</button>
@@ -135,6 +134,13 @@
             </label>
             <label>Descripci&oacute;n (opcional)
                 <textarea name="descripcion" id="restaurante-descripcion" maxlength="255" rows="3" placeholder="Ej: Bowls saludables y veganos."></textarea>
+            </label>
+            <label>Color de marca
+                <div class="campo-color">
+                    <input type="color" name="color" id="restaurante-color" value="#f97316" aria-label="Selector de color de marca">
+                    <input type="text" id="restaurante-color-hex" class="campo-color__hex" maxlength="7"
+                           placeholder="#F97316" aria-label="C&oacute;digo hexadecimal del color de marca">
+                </div>
             </label>
             <div class="modal__acciones">
                 <button type="button" class="btn btn--ghost" id="modal-restaurante-cancelar">Cancelar</button>
