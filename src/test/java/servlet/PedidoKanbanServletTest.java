@@ -1,12 +1,17 @@
 package servlet;
 
+import dao.InsumoDao;
 import dao.PedidoDao;
+import dao.PlatoDao;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.EstadoPedido;
+import model.IngredientePlato;
+import model.Insumo;
 import model.Pedido;
+import model.Plato;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -87,9 +92,13 @@ class PedidoKanbanServletTest {
 
     @Test
     void doPostMoverConStockInsuficienteDejaElErrorYFaltantesEnSesion() throws Exception {
-        // Plato 1 (Pizza Margarita) requiere albahaca fresca (insumo 7), sembrada con stock 0.
-        Pedido pedido = pedidoDao.guardar(new Pedido(0, "Pizza sin albahaca", "Napoli",
-                EstadoPedido.RECIBIDO, 1));
+        // Insumo y plato propios, con stock deliberadamente insuficiente para la receta.
+        Insumo insumoEscaso = new InsumoDao().guardar(
+                new Insumo(0, "Insumo escaso test " + System.nanoTime(), "kg", 1.0, 1.0, 1.0));
+        Plato platoSinStock = new PlatoDao().guardar(new Plato(0, "Plato sin stock test " + System.nanoTime(),
+                0, java.util.List.of(new IngredientePlato(insumoEscaso.getId(), 999, "kg"))));
+        Pedido pedido = pedidoDao.guardar(new Pedido(0, "Pedido sin stock suficiente", "Marca test",
+                EstadoPedido.RECIBIDO, platoSinStock.getId()));
         when(request.getParameter("accion")).thenReturn("mover");
         when(request.getParameter("pedidoId")).thenReturn(String.valueOf(pedido.getId()));
         when(request.getParameter("rol")).thenReturn(null);

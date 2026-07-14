@@ -80,4 +80,17 @@ public class Pedido {
     public void setCreadoEn(LocalDateTime creadoEn) {
         this.creadoEn = creadoEn;
     }
+
+    /** Igualdad por id: dos instancias representan el mismo pedido si vienen de la misma fila en BD. */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) { return true; }
+        if (!(obj instanceof Pedido)) { return false; }
+        return id == ((Pedido) obj).id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id);
+    }
 }

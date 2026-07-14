@@ -42,4 +42,17 @@ public class Restaurante {
     public void setDescripcion(String descripcion) {
         this.descripcion = descripcion;
     }
+
+    /** Igualdad por id: dos instancias representan el mismo restaurante si vienen de la misma fila en BD. */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) { return true; }
+        if (!(obj instanceof Restaurante)) { return false; }
+        return id == ((Restaurante) obj).id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id);
+    }
 }

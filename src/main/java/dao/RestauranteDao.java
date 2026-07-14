@@ -2,46 +2,50 @@ package dao;
 
 import model.Restaurante;
 
-import java.util.Comparator;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 /**
- * Persistencia en memoria de restaurantes (marcas) de la Dark Kitchen.
- * El almacen es estatico para compartir el mismo estado entre peticiones
- * del servlet (simula la BD). Los ids sembrados aqui (1..4) son los que
- * usa la semilla de PlatoDao para asociar cada plato a su restaurante.
+ * Persistencia de restaurantes (marcas) de la Dark Kitchen en la BD H2
+ * (ver {@link ConexionBD}). Los datos de ejemplo (restaurantes ecuatorianos)
+ * se cargan una sola vez desde src/main/resources/db/seed.sql.
  */
 public class RestauranteDao {
 
-    private static final Map<Integer, Restaurante> ALMACEN = new ConcurrentHashMap<>();
-    private static final AtomicInteger SECUENCIA = new AtomicInteger(0);
-
-    static {
-        sembrar("Napoli", "Pizzeria artesanal de horno de lena.");
-        sembrar("Burger Lab", "Hamburguesas gourmet y experimentales.");
-        sembrar("Sakura", "Cocina japonesa: sushi y roles.");
-        sembrar("El Fogon", "Comida mexicana tradicional.");
-    }
-
-    private static void sembrar(String nombre, String descripcion) {
-        int id = SECUENCIA.incrementAndGet();
-        ALMACEN.put(id, new Restaurante(id, nombre, descripcion));
-    }
-
     public Restaurante guardar(Restaurante restaurante) {
-        if (restaurante.getId() == 0) {
-            restaurante.setId(SECUENCIA.incrementAndGet());
+        String sql = "INSERT INTO restaurantes (nombre, descripcion) VALUES (?, ?)";
+        try (Connection con = ConexionBD.obtenerConexion();
+             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, restaurante.getNombre());
+            ps.setString(2, restaurante.getDescripcion());
+            ps.executeUpdate();
+            try (ResultSet claves = ps.getGeneratedKeys()) {
+                if (claves.next()) {
+                    restaurante.setId(claves.getInt(1));
+                }
+            }
+            return restaurante;
+        } catch (SQLException ex) {
+            throw new IllegalStateException("No se pudo guardar el restaurante", ex);
         }
-        ALMACEN.put(restaurante.getId(), restaurante);
-        return restaurante;
     }
 
     public Restaurante buscarPorId(int id) {
-        return ALMACEN.get(id);
+        String sql = "SELECT id, nombre, descripcion FROM restaurantes WHERE id = ?";
+        try (Connection con = ConexionBD.obtenerConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? mapear(rs) : null;
+            }
+        } catch (SQLException ex) {
+            throw new IllegalStateException("No se pudo buscar el restaurante", ex);
+        }
     }
 
     /** Busca un restaurante por nombre ignorando mayusculas/minusculas. */
@@ -49,25 +53,59 @@ public class RestauranteDao {
         if (nombre == null) {
             return null;
         }
-        String objetivo = nombre.trim();
-        return ALMACEN.values().stream()
-                .filter(r -> r.getNombre().equalsIgnoreCase(objetivo))
-                .findFirst()
-                .orElse(null);
+        String sql = "SELECT id, nombre, descripcion FROM restaurantes WHERE LOWER(nombre) = LOWER(?)";
+        try (Connection con = ConexionBD.obtenerConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, nombre.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? mapear(rs) : null;
+            }
+        } catch (SQLException ex) {
+            throw new IllegalStateException("No se pudo buscar el restaurante", ex);
+        }
     }
 
     /** Listado ordenado alfabeticamente por nombre (HU27). */
     public List<Restaurante> listarTodos() {
-        return ALMACEN.values().stream()
-                .sorted(Comparator.comparing(Restaurante::getNombre, String.CASE_INSENSITIVE_ORDER))
-                .collect(Collectors.toList());
+        String sql = "SELECT id, nombre, descripcion FROM restaurantes ORDER BY LOWER(nombre)";
+        List<Restaurante> resultado = new ArrayList<>();
+        try (Connection con = ConexionBD.obtenerConexion();
+             Statement st = con.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                resultado.add(mapear(rs));
+            }
+            return resultado;
+        } catch (SQLException ex) {
+            throw new IllegalStateException("No se pudo listar los restaurantes", ex);
+        }
     }
 
     public void actualizar(Restaurante restaurante) {
-        ALMACEN.put(restaurante.getId(), restaurante);
+        String sql = "UPDATE restaurantes SET nombre = ?, descripcion = ? WHERE id = ?";
+        try (Connection con = ConexionBD.obtenerConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, restaurante.getNombre());
+            ps.setString(2, restaurante.getDescripcion());
+            ps.setInt(3, restaurante.getId());
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            throw new IllegalStateException("No se pudo actualizar el restaurante", ex);
+        }
     }
 
     public void eliminar(int id) {
-        ALMACEN.remove(id);
+        String sql = "DELETE FROM restaurantes WHERE id = ?";
+        try (Connection con = ConexionBD.obtenerConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            throw new IllegalStateException("No se pudo eliminar el restaurante", ex);
+        }
+    }
+
+    private Restaurante mapear(ResultSet rs) throws SQLException {
+        return new Restaurante(rs.getInt("id"), rs.getString("nombre"), rs.getString("descripcion"));
     }
 }
