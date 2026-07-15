@@ -52,6 +52,6 @@ public class MonitoreoServlet extends HttpServlet {
         }
         request.setAttribute("proveedorPorInsumo", proveedorPorInsumo);
 
-        request.getRequestDispatcher("/views/cu9-panel-monitoreo.jsp").forward(request, response);
+        request.getRequestDispatcher("/views/panel-monitoreo.jsp").forward(request, response);
     }
 }

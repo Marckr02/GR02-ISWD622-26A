@@ -59,14 +59,24 @@
                     data: agrupados.map(function (d) { return d.cantidad; }),
                     backgroundColor: colores,
                     borderRadius: 6,
-                    maxBarThickness: 38
+                    // Con el 50% del ancho disponible las barras pueden ser mas
+                    // gruesas y ganar peso visual, en vez del maxBarThickness
+                    // angosto que necesitaba la columna estrecha anterior.
+                    barThickness: 44
                 }]
             },
             options: {
                 responsive: true,
-                plugins: { legend: { display: false } },
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, datalabels: { display: false } },
                 scales: {
-                    x: { ticks: { color: colorTexto() }, grid: { display: false } },
+                    x: {
+                        // Con mas espacio horizontal, evitamos que Chart.js incline
+                        // agresivamente los nombres de los platos: los deja
+                        // horizontales y solo los rota un poco si de verdad no caben.
+                        ticks: { color: colorTexto(), maxRotation: 30, minRotation: 0, autoSkip: false },
+                        grid: { display: false }
+                    },
                     y: { beginAtZero: true, ticks: { color: colorTexto(), precision: 0 }, grid: { color: colorGrilla() } }
                 }
             }
@@ -82,6 +92,10 @@
         var colores = agrupados.map(function (d, i) {
             return d.nombre.indexOf("Otros") === 0 ? "#4b5563" : colorPaleta()[i % colorPaleta().length];
         });
+        // El plugin de etiquetas de datos solo se activa para ESTE grafico (se pasa
+        // por instancia, no via Chart.register global) para que el de barras no
+        // herede datalabels sin querer.
+        var tieneDataLabels = typeof ChartDataLabels !== "undefined";
         new Chart(canvas.getContext("2d"), {
             type: "doughnut",
             data: {
@@ -95,9 +109,25 @@
                     borderWidth: 2
                 }]
             },
+            plugins: tieneDataLabels ? [ChartDataLabels] : [],
             options: {
                 responsive: true,
-                plugins: { legend: { position: "bottom", labels: { color: colorTexto(), boxWidth: 12, padding: 12 } } }
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: "bottom", labels: { color: colorTexto(), boxWidth: 12, padding: 12 } },
+                    // Porcentaje exacto de cada porcion, directamente sobre el
+                    // grafico -- el valor absoluto queda solo en el tooltip.
+                    datalabels: {
+                        display: tieneDataLabels,
+                        color: "#fff",
+                        font: { weight: "bold", size: 14 },
+                        formatter: function (valor, ctx) {
+                            var total = ctx.chart.data.datasets[0].data.reduce(function (a, b) { return a + b; }, 0);
+                            var porcentaje = total > 0 ? (valor / total) * 100 : 0;
+                            return porcentaje.toFixed(1) + "%";
+                        }
+                    }
+                }
             }
         });
     }

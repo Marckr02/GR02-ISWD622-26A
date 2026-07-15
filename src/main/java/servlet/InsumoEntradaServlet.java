@@ -45,7 +45,7 @@ public class InsumoEntradaServlet extends HttpServlet {
         }
         request.setAttribute("proveedorPorInsumo", proveedorPorInsumo);
 
-        request.getRequestDispatcher("/views/cu3-insumos-entrada.jsp").forward(request, response);
+        request.getRequestDispatcher("/views/insumos-entrada.jsp").forward(request, response);
     }
 
     @Override

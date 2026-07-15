@@ -1,13 +1,15 @@
 /*
  * "Plato" circular: tarjeta de disponibilidad compartida por Disponibilidad
- * (cu10), Panel de control (cu9) y Menu y disponibilidad (cu7) - mismo HTML,
- * mismo CSS en las tres (DRY). Diseno estrictamente flat: fondo solido, sin
- * sombras ni degradados, un solo borde de color de marca.
+ * (disponibilidad-cocinero.jsp) y Panel de control (panel-monitoreo.jsp) -
+ * mismo HTML, mismo CSS en ambas (DRY). Diseno de ceramica oscura mate con volumen:
+ * ala/borde exterior ligeramente elevado (luz suave arriba-izquierda, sombra
+ * abajo-derecha) y fondo central hundido/concavo; el color de marca ya no es
+ * un aro grueso, sino un fileteado fino justo en el limite interior del plato.
  *
- * Cada vista sigue definiendo sus propios tokens (--surface-2, --border,
- * --muted, --error, --listo, --radius) en su :root; este archivo solo los
- * consume. El color de marca llega por variable inline "--marca" en el
- * elemento .dish-circle (ver colorDeMarca() en las JSP).
+ * Cada vista sigue definiendo sus propios tokens (--surface, --surface-2,
+ * --border, --muted, --error, --listo, --radius) en su :root; este archivo
+ * solo los consume. El color de marca llega por variable inline "--marca" en
+ * el elemento .dish-circle (ver colorDeMarca() en las JSP).
  */
 
 .dish-circle-grid {
@@ -22,13 +24,21 @@
     flex-shrink: 0;
     box-sizing: border-box;
     border-radius: 50%;
-    background: var(--surface-2);
-    /* Borde exterior de color de marca + un ligero levantado (bevel), como el
-       aro de un plato real: highlight tenue arriba, sombra suave abajo. */
-    border: 3px solid var(--marca, var(--border));
+    /* Ala/borde exterior: degradado radial descentrado (luz arriba-izquierda,
+       tono mas profundo abajo-derecha) para simular volumen ceramico, en vez
+       de un color solido plano. */
+    background: radial-gradient(circle at 32% 26%,
+        color-mix(in srgb, var(--surface-2), white 13%) 0%,
+        var(--surface-2) 45%,
+        color-mix(in srgb, var(--surface-2), black 18%) 100%);
+    border: 1px solid rgba(255, 255, 255, .04);
+    /* Bevel del ala: highlight tenue arriba-izquierda + sombra abajo-derecha
+       (la misma direccion de luz que el degradado de fondo), mas una sombra
+       de contacto para que el plato "flote" sobre la cuadricula. */
     box-shadow:
-        0 1px 0 rgba(255, 255, 255, .05),
-        0 8px 16px rgba(0, 0, 0, .3);
+        -4px -5px 9px rgba(255, 255, 255, .045),
+        7px 10px 20px rgba(0, 0, 0, .42),
+        0 1px 0 rgba(255, 255, 255, .03);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -42,25 +52,31 @@
 .dish-circle:hover {
     transform: translateY(-3px);
     box-shadow:
-        0 1px 0 rgba(255, 255, 255, .06),
-        0 12px 22px rgba(0, 0, 0, .38);
+        -4px -5px 10px rgba(255, 255, 255, .05),
+        9px 14px 26px rgba(0, 0, 0, .5),
+        0 1px 0 rgba(255, 255, 255, .04);
 }
 
-/* Circulo interior concentrico: fondo "hundido" (sombra inset) para simular
-   la base de un plato real. Puramente decorativo (queda detras del texto). */
+/* Circulo interior concentrico: fondo hundido/concavo (sombras inset con la
+   misma direccion de luz arriba-izquierda / sombra abajo-derecha) para
+   simular la base real de un plato. El fileteado de marca vive aqui tambien:
+   un aro delgado y nitido justo en el limite donde el ala cae hacia el fondo,
+   la unica pincelada de color de marca en toda la pieza. Puramente
+   decorativo (queda detras del texto). */
 .dish-circle::before {
     content: "";
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 87%;
-    height: 87%;
+    width: 84%;
+    height: 84%;
     transform: translate(-50%, -50%);
     border-radius: 50%;
     background: var(--surface);
     box-shadow:
-        inset 0 4px 10px rgba(0, 0, 0, .45),
-        inset 0 -2px 4px rgba(255, 255, 255, .04);
+        inset 5px 6px 13px rgba(0, 0, 0, .55),
+        inset -4px -4px 9px rgba(255, 255, 255, .045),
+        0 0 0 1.5px var(--marca, var(--border));
     z-index: 0;
 }
 

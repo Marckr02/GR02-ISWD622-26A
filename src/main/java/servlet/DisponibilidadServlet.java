@@ -27,6 +27,6 @@ public class DisponibilidadServlet extends HttpServlet {
             throws ServletException, IOException {
         request.setAttribute("menu", menuService.sincronizarMenuConInventario());
         request.setAttribute("restauranteService", restauranteService);
-        request.getRequestDispatcher("/views/cu10-disponibilidad-cocinero.jsp").forward(request, response);
+        request.getRequestDispatcher("/views/disponibilidad-cocinero.jsp").forward(request, response);
     }
 }

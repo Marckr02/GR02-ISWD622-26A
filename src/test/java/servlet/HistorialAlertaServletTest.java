@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
 /**
  * TDD (HU11): HistorialAlertaServlet solo lista el historial ya registrado
  * (no registra alertas nuevas, eso lo hace MonitoreoServlet) y reenvia a la
- * vista cu11-historial-alertas.jsp. Va en el paquete servlet porque doGet es
+ * vista historial-alertas.jsp. Va en el paquete servlet porque doGet es
  * protected y el servlet no admite mockear el servicio real.
  */
 @ExtendWith(MockitoExtension.class)
@@ -38,7 +38,7 @@ class HistorialAlertaServletTest {
 
     @Test
     void doGetExponeElHistorialDeAlertasYReenviaALaVista() throws Exception {
-        when(request.getRequestDispatcher("/views/cu11-historial-alertas.jsp")).thenReturn(dispatcher);
+        when(request.getRequestDispatcher("/views/historial-alertas.jsp")).thenReturn(dispatcher);
 
         servlet.doGet(request, response);
 

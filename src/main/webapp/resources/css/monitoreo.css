@@ -23,10 +23,11 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-/* ---------- Dashboard dividido: insumos (35%) / menu (65%) ---------- */
+/* ---------- Dashboard dividido: insumos con ancho justo para tabla+buscador,
+   menu absorbe todo el espacio restante ---------- */
 .dashboard {
     display: grid;
-    grid-template-columns: 35fr 65fr;
+    grid-template-columns: minmax(320px, 400px) 1fr;
     gap: 1.4rem;
     align-items: start;
     padding: 1.8rem;
@@ -51,7 +52,8 @@ body {
 }
 .tabla th { color: var(--muted); font-weight: 600; font-size: .7rem; text-transform: uppercase; letter-spacing: .03em; }
 .tabla td:first-child, .tabla th:first-child { overflow-wrap: break-word; }
-.tabla .num { text-align: right; white-space: nowrap; width: 22%; }
+.tabla .num { text-align: right; width: 22%; }
+.tabla td.num { white-space: nowrap; }
 .tabla__accion { text-align: right; width: 15%; }
 
 .critico--rojo { color: var(--error); font-weight: 800; }
@@ -89,18 +91,18 @@ body {
 .status-dot--amarillo { background: var(--warn); box-shadow: 0 0 0 3px rgba(245, 165, 36, .18); }
 .status-dot--verde { background: var(--listo); box-shadow: 0 0 0 3px rgba(34, 197, 94, .18); }
 
-/* ---------- Buscador + filtros por nivel de stock de "Insumos criticos", en una
-   sola fila: el buscador aprovecha el espacio libre a la izquierda y las
-   pildoras de filtro quedan pegadas a la derecha. ---------- */
+/* ---------- Buscador + filtros por nivel de stock de "Insumos criticos": el
+   buscador ocupa su propia fila y las pildoras de filtro quedan debajo,
+   alineadas completamente a la izquierda. ---------- */
 .ins-toolbar {
     display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .7rem;
     margin-bottom: .9rem;
 }
-.ins-toolbar .buscador { flex: 0 1 220px; max-width: 240px; }
-.filtros-stock { display: flex; gap: .5rem; flex-wrap: wrap; margin-left: auto; }
+.ins-toolbar .buscador { flex: none; width: 100%; max-width: 240px; }
+.filtros-stock { display: flex; gap: .5rem; flex-wrap: wrap; margin-left: 0; }
 .filtros-stock .filtro-pill--rojo.is-on { color: var(--error); border-color: var(--error); }
 .filtros-stock .filtro-pill--amarillo.is-on { color: var(--warn); border-color: var(--warn); }
 
@@ -222,16 +224,16 @@ body {
 .menu-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
+    gap: 1.6rem;
     justify-content: center;
 }
 
 /* El "plato" circular (.dish-circle y compania) vive en dish-circle.css,
    compartida con Disponibilidad y Menu y disponibilidad; aca se reescala para
-   caber exactamente 4 por fila dentro del panel--menu (mas angosto). */
+   caber exactamente 4 por fila dentro del panel--menu, ahora mas ancho. */
 .panel--menu .dish-circle {
     width: 100%;
-    max-width: 190px;
+    max-width: 220px;
     height: auto;
     aspect-ratio: 1 / 1;
     margin: 0 auto;

@@ -114,106 +114,205 @@ body {
 .btn-historial svg { width: 15px; height: 15px; }
 .btn-historial:hover, .btn-historial:focus-visible { color: var(--text); background: var(--surface-2); }
 
-.col__cards { display: flex; flex-direction: column; gap: .7rem; }
+.col__cards { display: flex; flex-direction: column; gap: .9rem; }
 .col__empty { color: var(--muted); font-size: .82rem; font-style: italic; }
 
-/* ---------- Ticket de comanda digital: papel oscuro con esquinas apenas
-   redondeadas (parece papel, no una tarjeta de UI generica). "overflow: hidden"
-   deja que .ticket-header (rectangulo simple, sin su propio radio) respete las
-   esquinas superiores redondeadas del ticket, y que las muescas de ::before/
-   ::after del corte se recorten limpio contra el borde. ---------- */
+/* ---------- Tickets independientes: cada uno flota por separado (separacion
+   constante via .col__cards gap) y luce sierra propia arriba y abajo -- ya no
+   hay logica condicional de primer/ultimo/unico elemento ni solape entre
+   tarjetas contiguas, todas usan exactamente el mismo patron simetrico. ---------- */
 .ticket-card {
-    display: flex;
-    flex-direction: column;
-    border-radius: 8px;
-    overflow: hidden;
-    background: var(--surface-3);
+    --ticket-clip: polygon(
+        0% 0px, 3.571% 6px, 7.143% 0px, 10.714% 6px, 14.286% 0px, 17.857% 6px,
+        21.429% 0px, 25% 6px, 28.571% 0px, 32.143% 6px, 35.714% 0px, 39.286% 6px,
+        42.857% 0px, 46.429% 6px, 50% 0px, 53.571% 6px, 57.143% 0px, 60.714% 6px,
+        64.286% 0px, 67.857% 6px, 71.429% 0px, 75% 6px, 78.571% 0px, 82.143% 6px,
+        85.714% 0px, 89.286% 6px, 92.857% 0px, 96.429% 6px, 100% 0px,
+        100% 100%, 96.429% calc(100% - 6px), 92.857% 100%, 89.286% calc(100% - 6px),
+        85.714% 100%, 82.143% calc(100% - 6px), 78.571% 100%, 75% calc(100% - 6px),
+        71.429% 100%, 67.857% calc(100% - 6px), 64.286% 100%, 60.714% calc(100% - 6px),
+        57.143% 100%, 53.571% calc(100% - 6px), 50% 100%, 46.429% calc(100% - 6px),
+        42.857% 100%, 39.286% calc(100% - 6px), 35.714% 100%, 32.143% calc(100% - 6px),
+        28.571% 100%, 25% calc(100% - 6px), 21.429% 100%, 17.857% calc(100% - 6px),
+        14.286% 100%, 10.714% calc(100% - 6px), 7.143% 100%, 3.571% calc(100% - 6px),
+        0% 100%
+    );
+    /* Membrete: zigzag arriba (calza con el borde superior del ticket), linea
+       recta abajo (donde se une con el cuerpo oscuro). */
+    --membrete-clip: polygon(
+        0% 0px, 3.571% 6px, 7.143% 0px, 10.714% 6px, 14.286% 0px, 17.857% 6px,
+        21.429% 0px, 25% 6px, 28.571% 0px, 32.143% 6px, 35.714% 0px, 39.286% 6px,
+        42.857% 0px, 46.429% 6px, 50% 0px, 53.571% 6px, 57.143% 0px, 60.714% 6px,
+        64.286% 0px, 67.857% 6px, 71.429% 0px, 75% 6px, 78.571% 0px, 82.143% 6px,
+        85.714% 0px, 89.286% 6px, 92.857% 0px, 96.429% 6px, 100% 0px,
+        100% 100%, 0% 100%
+    );
+    /* Cuerpo: linea recta arriba (donde se une con el membrete), zigzag abajo
+       (calza con el borde inferior del ticket). */
+    --body-clip: polygon(
+        0% 0px, 100% 0px,
+        100% 100%, 96.429% calc(100% - 6px), 92.857% 100%, 89.286% calc(100% - 6px),
+        85.714% 100%, 82.143% calc(100% - 6px), 78.571% 100%, 75% calc(100% - 6px),
+        71.429% 100%, 67.857% calc(100% - 6px), 64.286% 100%, 60.714% calc(100% - 6px),
+        57.143% 100%, 53.571% calc(100% - 6px), 50% 100%, 46.429% calc(100% - 6px),
+        42.857% 100%, 39.286% calc(100% - 6px), 35.714% 100%, 32.143% calc(100% - 6px),
+        28.571% 100%, 25% calc(100% - 6px), 21.429% 100%, 17.857% calc(100% - 6px),
+        14.286% 100%, 10.714% calc(100% - 6px), 7.143% 100%, 3.571% calc(100% - 6px),
+        0% 100%
+    );
+    position: relative;
+    height: 128px;
+    background: var(--border);
     box-shadow: 0 4px 10px rgba(0, 0, 0, .3);
     transition: transform .15s ease, box-shadow .15s ease;
     animation: aparece .25s ease both;
+    clip-path: var(--ticket-clip);
 }
 .ticket-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 18px rgba(0, 0, 0, .38);
+    z-index: 2;
 }
 
-/* ---------- Encabezado de marca: fondo solido del color de la marca, nombre del
-   restaurante gigante y protagonista. El color de texto (blanco o casi negro) se
-   fija por ticket via estilo inline segun el brillo de esa marca especifica (ver
-   ColorMarca.textoLegibleSobre en la JSP); el valor de aca abajo es solo un
-   respaldo por si faltara ese calculo. ---------- */
-.ticket-header {
-    position: relative;
-    width: 100%;
+/* ---------- Membrete de marca: bloque solido en el extremo superior, unico
+   lugar de la tarjeta que lleva el color original y vibrante del restaurante.
+   El color de texto se calcula por ticket (blanco o gris muy oscuro) segun el
+   brillo de esa marca especifica (ColorMarca.textoLegibleSobre en la JSP),
+   inyectado via estilo inline; el valor de aca es solo un respaldo. ---------- */
+.ticket-card__membrete {
+    position: absolute;
+    inset: 2px 2px auto 2px;
+    height: 32px;
+    z-index: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: .4rem;
     background: var(--marca, var(--muted));
     color: #fff;
-    font-size: .82rem;
+    clip-path: var(--membrete-clip);
+}
+.ticket-card__marca {
+    margin: 0;
+    max-width: calc(100% - 1rem);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: .72rem;
     font-weight: 800;
     text-transform: uppercase;
-    text-align: center;
-    letter-spacing: .5px;
-    line-height: 1.2;
-    padding: 6px 10px;
-    border-bottom: 2px dashed rgba(255, 255, 255, .3);
+    letter-spacing: .04em;
+    line-height: 1.1;
 }
 
-/* Muescas perforadas: dos "mordidas" circulares del color de la columna, justo
-   en los extremos de la linea punteada, simulando el corte de un ticket real.
-   Mas pequenas para calzar con la franja de encabezado, ahora delgada. */
-.ticket-header::before, .ticket-header::after {
-    content: "";
+/* ---------- Cuerpo neutro: fondo solido #232A35 identico en todos los tickets,
+   sin importar la marca, para no fatigar la vista en un pase de cocina de
+   muchas horas. Aloja unicamente el plato (protagonista), el numero de pedido
+   y los botones laterales -- estos ultimos anclados a la altura de este cuerpo,
+   no a la del ticket completo. ---------- */
+.ticket-card__body {
     position: absolute;
-    bottom: -5px;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--surface);
+    inset: 34px 2px 2px 2px;
+    z-index: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: .9rem 2.5rem .5rem;
+    background: #232A35;
+    clip-path: var(--body-clip);
 }
-.ticket-header::before { left: -5px; }
-.ticket-header::after { right: -5px; }
 
-/* ---------- Cuerpo del pedido: mismo fondo oscuro base, informacion clara y
-   jerarquizada por debajo del encabezado de marca. ---------- */
-.ticket-body {
-    width: 100%;
-    background: var(--surface-3);
-    padding: 16px;
+/* ---------- Contenido central del cuerpo: el plato es el protagonista absoluto
+   (texto mas grande y audaz) y el numero de pedido es el detalle mas sutil
+   debajo. Anclado al centro geometrico exacto del cuerpo via su padding fijo y
+   centrado flex; los botones son position:absolute y jamas desplazan este
+   bloque. El padding-top del cuerpo (.9rem) le da espacio de respiro frente a
+   la linea recta que lo separa del membrete. ---------- */
+.ticket-card__content {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: .2rem;
+    min-width: 0;
+    max-width: 100%;
+    max-height: 100%;
+    overflow: hidden;
 }
-.card__id { font-size: .9rem; color: #888; font-weight: 600; }
-.card__desc { margin: 0; color: #fff; font-size: 1.15rem; font-weight: 700; line-height: 1.4; }
+.ticket-card__plato {
+    margin: 0;
+    max-width: 100%;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    color: #fff;
+    font-size: 1.32rem;
+    font-weight: 800;
+    line-height: 1.22;
+}
+.ticket-card__id {
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #b7c1cc;
+    font-size: .68rem;
+    font-weight: 600;
+}
 
-.card__action { margin-top: .7rem; }
+/* ---------- Navegacion lateral: flotan sobre el cuerpo oscuro, ancladas a sus
+   bordes izquierdo/derecho y centradas en el eje vertical de ese cuerpo (no del
+   ticket completo, que incluye el membrete). Al ser position:absolute quedan
+   fuera del flujo, asi que su presencia o tamano jamas desplaza el plato/numero. ---------- */
+.ticket-card__nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ticket-card__nav--retro { left: .6rem; }
+.ticket-card__nav--avanzar { right: .6rem; }
 
-/* ---------- Botones de accion de la tarjeta: solo icono + tooltip nativo (title) ---------- */
+/* ---------- Botones de accion: mismo tamano compacto de antes, pero con mucha
+   mas intensidad de color/brillo para que destaquen sobre el fondo tintado. ---------- */
 .btn-icon {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 34px; height: 34px;
+    width: 26px; height: 26px;
     cursor: pointer;
     border: none;
-    border-radius: 8px;
-    color: #0e1116;
-    background: var(--accent);
-    transition: transform .12s, filter .12s, background .15s, border-color .15s;
+    border-radius: 50%;
+    color: #fff;
+    background: color-mix(in srgb, var(--accent) 55%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 90%, transparent);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 55%, transparent);
+    opacity: 1;
+    transition: transform .12s, filter .12s, background .15s, border-color .15s, box-shadow .15s;
 }
-.btn-icon svg { width: 16px; height: 16px; }
-.btn-icon:hover { filter: brightness(1.07); }
+.btn-icon svg { width: 12px; height: 12px; }
+.btn-icon:hover { filter: brightness(1.15); }
 .btn-icon:active { transform: scale(.94); }
-.btn-icon:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.btn-icon:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
 .btn-icon--retro {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--muted);
+    background: rgba(255, 255, 255, .22);
+    border: 1px solid rgba(255, 255, 255, .55);
+    color: #fff;
+    box-shadow: 0 0 8px rgba(255, 255, 255, .25);
 }
-.btn-icon--retro:hover { color: var(--text); border-color: #3a4350; background: var(--surface); filter: none; }
+.btn-icon--retro:hover { border-color: #fff; background: rgba(255, 255, 255, .32); filter: none; }
 .btn-icon--cargando { opacity: .55; cursor: wait; animation: latido 1s ease-in-out infinite; }
 
 .card__done {
-    display: inline-block; margin-top: .6rem;
-    font-size: .78rem; color: var(--entregado); font-weight: 600;
+    display: inline-block; margin-top: .1rem;
+    font-size: .74rem; color: var(--entregado); font-weight: 600;
 }
 
 /* ---------- Modal de historial completo de entregados ---------- */

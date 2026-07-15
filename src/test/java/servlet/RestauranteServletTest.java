@@ -43,34 +43,11 @@ class RestauranteServletTest {
     private HttpSession session;
 
     @Test
-    void doGetSinAccionListaRestaurantesYReenviaAlListado() throws Exception {
-        when(request.getParameter("accion")).thenReturn(null);
-        when(request.getRequestDispatcher("/views/cu27-listado-restaurantes.jsp")).thenReturn(dispatcher);
-
-        servlet.doGet(request, response);
-
-        verify(request).setAttribute(eq("restaurantes"), notNull());
-        verify(dispatcher).forward(request, response);
-    }
-
-    @Test
-    void doGetConAccionNuevaListaRestaurantesYReenviaAlListado() throws Exception {
-        // El alta ahora vive solo en el modal de cu27: ya no existe una pagina propia (cu26).
-        when(request.getParameter("accion")).thenReturn("nueva");
-        when(request.getRequestDispatcher("/views/cu27-listado-restaurantes.jsp")).thenReturn(dispatcher);
-
-        servlet.doGet(request, response);
-
-        verify(request).setAttribute(eq("restaurantes"), notNull());
-        verify(dispatcher).forward(request, response);
-    }
-
-    @Test
-    void doGetConAccionEditarListaRestaurantesYReenviaAlListado() throws Exception {
-        // La edicion ahora vive solo en el modal de cu27 (con selector de color incluido);
-        // ya no existe una pagina propia (cu28).
-        when(request.getParameter("accion")).thenReturn("editar");
-        when(request.getRequestDispatcher("/views/cu27-listado-restaurantes.jsp")).thenReturn(dispatcher);
+    void doGetListaRestaurantesYReenviaAlListado() throws Exception {
+        // El alta, la edicion y la confirmacion de eliminacion viven solo en
+        // modales in-page del listado: ya no existen paginas propias (cu12/cu25/
+        // cu29 fueron retiradas), asi que doGet ni siquiera lee "accion".
+        when(request.getRequestDispatcher("/views/listado-restaurantes.jsp")).thenReturn(dispatcher);
 
         servlet.doGet(request, response);
 

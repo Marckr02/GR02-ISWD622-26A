@@ -47,7 +47,7 @@ class MetricasServletTest {
     void doGetSinParametrosSoloMuestraElSelectorSinMensajeDeError() throws Exception {
         when(request.getParameter("restauranteId")).thenReturn(null);
         when(request.getParameter("buscar")).thenReturn(null);
-        when(request.getRequestDispatcher("/views/cu35-metricas-restaurante.jsp")).thenReturn(dispatcher);
+        when(request.getRequestDispatcher("/views/metricas-restaurante.jsp")).thenReturn(dispatcher);
 
         servlet.doGet(request, response);
 
@@ -60,7 +60,7 @@ class MetricasServletTest {
     void doGetConBuscarYSinRestauranteIdMarcaSinSeleccion() throws Exception {
         when(request.getParameter("restauranteId")).thenReturn(null);
         when(request.getParameter("buscar")).thenReturn("1");
-        when(request.getRequestDispatcher("/views/cu35-metricas-restaurante.jsp")).thenReturn(dispatcher);
+        when(request.getRequestDispatcher("/views/metricas-restaurante.jsp")).thenReturn(dispatcher);
 
         servlet.doGet(request, response);
 
@@ -72,7 +72,7 @@ class MetricasServletTest {
     void doGetConRestauranteIdInvalidoMarcaSinSeleccion() throws Exception {
         when(request.getParameter("restauranteId")).thenReturn("no-es-un-numero");
         when(request.getParameter("buscar")).thenReturn(null);
-        when(request.getRequestDispatcher("/views/cu35-metricas-restaurante.jsp")).thenReturn(dispatcher);
+        when(request.getRequestDispatcher("/views/metricas-restaurante.jsp")).thenReturn(dispatcher);
 
         servlet.doGet(request, response);
 
@@ -91,7 +91,7 @@ class MetricasServletTest {
 
         when(request.getParameter("restauranteId")).thenReturn(String.valueOf(restaurante.getId()));
         when(request.getParameter("buscar")).thenReturn(null);
-        when(request.getRequestDispatcher("/views/cu35-metricas-restaurante.jsp")).thenReturn(dispatcher);
+        when(request.getRequestDispatcher("/views/metricas-restaurante.jsp")).thenReturn(dispatcher);
 
         servlet.doGet(request, response);
 
@@ -108,7 +108,7 @@ class MetricasServletTest {
     void doGetConRestauranteIdCeroMuestraLaVistaGeneral() throws Exception {
         when(request.getParameter("restauranteId")).thenReturn("0");
         when(request.getParameter("buscar")).thenReturn(null);
-        when(request.getRequestDispatcher("/views/cu35-metricas-restaurante.jsp")).thenReturn(dispatcher);
+        when(request.getRequestDispatcher("/views/metricas-restaurante.jsp")).thenReturn(dispatcher);
 
         servlet.doGet(request, response);
 
