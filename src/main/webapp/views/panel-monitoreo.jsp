@@ -15,9 +15,10 @@
     RestauranteService restauranteService = (RestauranteService) request.getAttribute("restauranteService");
     String ctx = request.getContextPath();
 
-    // Marcas presentes en el menu actual (nombre -> color), en orden de primera
-    // aparicion, para pintar el filtro por restaurante de "Estado del menu".
-    java.util.LinkedHashMap<String, String> marcasMenu = new java.util.LinkedHashMap<>();
+    // Marcas presentes en el menu actual (nombre -> color), en orden alfabetico,
+    // para pintar el filtro por restaurante de "Estado del menu" (asi el salto
+    // por teclado del <select> nativo, al escribir una letra, es predecible).
+    java.util.TreeMap<String, String> marcasMenu = new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     if (menu != null) {
         for (DisponibilidadPlato d : menu) {
             Restaurante r = (restauranteService == null) ? null : restauranteService.buscar(d.getPlato().getRestauranteId());

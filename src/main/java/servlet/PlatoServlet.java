@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import model.IngredientePlato;
-import model.Plato;
 import service.PlatoService;
 
 import java.io.IOException;
@@ -14,10 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Controlador de platos y recetas (F6.2). GET sin parametros lista los
- * platos (cu31); GET con accion=nueva muestra el alta (cu30); GET con
- * accion=editar&id= muestra la edicion (cu32); GET con
- * accion=confirmarEliminar&id= muestra la confirmacion (cu33).
+ * Controlador de platos y recetas (F6.2). GET siempre lista los platos
+ * (listado-platos.jsp): el alta, la edicion y la confirmacion de eliminacion
+ * viven en modales in-page de esa misma vista, no en paginas propias.
  * POST procesa "guardar", "actualizar" y "eliminar". Los ingredientes de
  * la receta llegan como parametros repetidos insumoId[], cantidad[] y
  * unidad[] (una posicion por fila del formulario dinamico).
@@ -30,38 +28,10 @@ public class PlatoServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String accion = request.getParameter("accion");
-        if ("nueva".equals(accion)) {
-            cargarCatalogos(request);
-            request.getRequestDispatcher("/views/cu30-registrar-plato.jsp").forward(request, response);
-            return;
-        }
-        if ("editar".equals(accion)) {
-            Plato plato = platoService.buscar(parsearId(request.getParameter("id")));
-            if (plato == null) {
-                response.sendRedirect(url(request, ""));
-                return;
-            }
-            cargarCatalogos(request);
-            request.setAttribute("plato", plato);
-            request.getRequestDispatcher("/views/cu32-editar-plato.jsp").forward(request, response);
-            return;
-        }
-        if ("confirmarEliminar".equals(accion)) {
-            Plato plato = platoService.buscar(parsearId(request.getParameter("id")));
-            if (plato == null) {
-                response.sendRedirect(url(request, ""));
-                return;
-            }
-            request.setAttribute("plato", plato);
-            request.setAttribute("restaurante", platoService.restauranteDe(plato));
-            request.getRequestDispatcher("/views/cu33-confirmar-eliminar-plato.jsp").forward(request, response);
-            return;
-        }
         request.setAttribute("platos", platoService.listarPlatos());
         request.setAttribute("platoService", platoService);
         cargarCatalogos(request);
-        request.getRequestDispatcher("/views/cu31-listado-platos.jsp").forward(request, response);
+        request.getRequestDispatcher("/views/listado-platos.jsp").forward(request, response);
     }
 
     @Override
@@ -85,12 +55,10 @@ public class PlatoServlet extends HttpServlet {
                 request.getSession().setAttribute("mensaje", "Plato eliminado correctamente");
             }
         } catch (RuntimeException ex) {
+            // El alta, la edicion y la eliminacion viven en modales in-page del
+            // listado: ante un error siempre se vuelve al listado, que muestra el
+            // mensaje via toast.
             request.getSession().setAttribute("error", ex.getMessage());
-            if ("guardar".equals(accion)) {
-                destino = url(request, "accion=nueva");
-            } else if ("actualizar".equals(accion)) {
-                destino = url(request, "accion=editar&id=" + request.getParameter("id"));
-            }
         }
         response.sendRedirect(destino);
     }

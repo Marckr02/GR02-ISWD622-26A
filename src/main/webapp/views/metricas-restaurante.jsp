@@ -65,6 +65,7 @@
     <link rel="stylesheet" href="<%= ctx %>/resources/css/main.css">
     <link rel="stylesheet" href="<%= ctx %>/resources/css/toast.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2/dist/chartjs-plugin-datalabels.min.js"></script>
 </head>
 <body data-hay-resultados="<%= hayResultados %>">
 <jsp:include page="navbar.jsp"><jsp:param name="activo" value="metricas"/></jsp:include>

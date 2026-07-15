@@ -57,9 +57,12 @@
     gap: .6rem;
 }
 
+/* Tabla y grafico comparten el ancho al 50/50: el grafico deja de ser un
+   detalle secundario arrinconado y pasa a tener el mismo protagonismo visual
+   que la tabla de datos. */
 .metricas-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+    grid-template-columns: 1fr 1fr;
     gap: 1.4rem;
     align-items: start;
 }
@@ -67,8 +70,8 @@
     background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 1rem;
-    min-height: 240px;
+    padding: 1.6rem;
+    min-height: 420px;
     display: flex;
     align-items: center;
     justify-content: center;

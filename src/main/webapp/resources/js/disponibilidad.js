@@ -10,7 +10,7 @@
 
     document.addEventListener("DOMContentLoaded", function () {
         if (window.activarFiltrosMenu) {
-            window.activarFiltrosMenu({ buscadorId: "buscador-disponibilidad" });
+            window.activarFiltrosMenu({ buscadorId: "buscador-disponibilidad", selectMarcaId: "filtro-marca-disponibilidad" });
         }
         if (window.activarPopoverFaltantes) {
             window.activarPopoverFaltantes();

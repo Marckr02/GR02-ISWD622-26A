@@ -47,7 +47,7 @@ public class PedidoKanbanServlet extends HttpServlet {
         request.setAttribute("policy", policy);
         request.setAttribute("restaurantes", restauranteService.listarRestaurantes());
         request.setAttribute("platos", platoService.listarPlatos());
-        request.getRequestDispatcher("/views/cu2-pedidos-kanban.jsp").forward(request, response);
+        request.getRequestDispatcher("/views/pedidos-kanban.jsp").forward(request, response);
     }
 
     @Override

@@ -52,7 +52,7 @@ class PedidoKanbanServletTest {
     @Test
     void doGetArmaUnaColumnaPorEstadoYExponeLaPolicyYReenviaAlTablero() throws Exception {
         when(request.getParameter("rol")).thenReturn(null);
-        when(request.getRequestDispatcher("/views/cu2-pedidos-kanban.jsp")).thenReturn(dispatcher);
+        when(request.getRequestDispatcher("/views/pedidos-kanban.jsp")).thenReturn(dispatcher);
 
         servlet.doGet(request, response);
 
@@ -67,7 +67,7 @@ class PedidoKanbanServletTest {
     void doGetConRolValidoLoGuardaEnSesion() throws Exception {
         when(request.getParameter("rol")).thenReturn("cocinero");
         when(request.getSession()).thenReturn(session);
-        when(request.getRequestDispatcher("/views/cu2-pedidos-kanban.jsp")).thenReturn(dispatcher);
+        when(request.getRequestDispatcher("/views/pedidos-kanban.jsp")).thenReturn(dispatcher);
 
         servlet.doGet(request, response);
 

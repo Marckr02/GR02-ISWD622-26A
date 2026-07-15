@@ -17,11 +17,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * TDD (F6.2 platos y recetas): PlatoServlet lista, da de alta, edita y
- * elimina platos con su receta (ingredientes insumoId[]/cantidad[]/unidad[])
- * contra el PlatoService real (el servlet crea sus propios servicios, sin
- * inyeccion de dependencias). Usa el restaurante semilla "Napoli" (id 1) y
- * el insumo semilla "Harina de trigo" (id 1) para las recetas de prueba, y
+ * TDD (F6.2 platos y recetas): PlatoServlet lista platos y procesa
+ * "guardar"/"actualizar"/"eliminar" con su receta (ingredientes
+ * insumoId[]/cantidad[]/unidad[]) contra el PlatoService real (el servlet
+ * crea sus propios servicios, sin inyeccion de dependencias); el alta, la
+ * edicion y la confirmacion de eliminacion viven en modales in-page del
+ * listado, no en paginas propias. Usa el restaurante semilla "Napoli" (id 1)
+ * y el insumo semilla "Harina de trigo" (id 1) para las recetas de prueba, y
  * nombres de plato unicos para no chocar con la semilla ni con otras pruebas.
  */
 @ExtendWith(MockitoExtension.class)
@@ -43,64 +45,18 @@ class PlatoServletTest {
     private HttpSession session;
 
     @Test
-    void doGetSinAccionListaPlatosYReenviaAlListado() throws Exception {
-        when(request.getParameter("accion")).thenReturn(null);
-        when(request.getRequestDispatcher("/views/cu31-listado-platos.jsp")).thenReturn(dispatcher);
+    void doGetListaPlatosCargaCatalogosYReenviaAlListado() throws Exception {
+        // El alta, la edicion y la confirmacion de eliminacion viven solo en
+        // modales in-page del listado: ya no existen paginas propias (cu30/cu32/
+        // cu33 fueron retiradas), asi que doGet ni siquiera lee "accion" ni "id".
+        when(request.getRequestDispatcher("/views/listado-platos.jsp")).thenReturn(dispatcher);
 
         servlet.doGet(request, response);
 
         verify(request).setAttribute(eq("platos"), notNull());
         verify(request).setAttribute(eq("platoService"), notNull());
-        verify(dispatcher).forward(request, response);
-    }
-
-    @Test
-    void doGetConAccionNuevaCargaCatalogosYReenviaAlAlta() throws Exception {
-        when(request.getParameter("accion")).thenReturn("nueva");
-        when(request.getRequestDispatcher("/views/cu30-registrar-plato.jsp")).thenReturn(dispatcher);
-
-        servlet.doGet(request, response);
-
         verify(request).setAttribute(eq("restaurantes"), notNull());
         verify(request).setAttribute(eq("insumos"), notNull());
-        verify(dispatcher).forward(request, response);
-    }
-
-    @Test
-    void doGetEditarConPlatoExistenteCargaCatalogosYElPlato() throws Exception {
-        Plato plato = platoService.buscar(1);
-        when(request.getParameter("accion")).thenReturn("editar");
-        when(request.getParameter("id")).thenReturn("1");
-        when(request.getRequestDispatcher("/views/cu32-editar-plato.jsp")).thenReturn(dispatcher);
-
-        servlet.doGet(request, response);
-
-        verify(request).setAttribute("plato", plato);
-        verify(dispatcher).forward(request, response);
-    }
-
-    @Test
-    void doGetEditarConIdInexistenteRedirigeAlListado() throws Exception {
-        when(request.getParameter("accion")).thenReturn("editar");
-        when(request.getParameter("id")).thenReturn("999999");
-        when(request.getParameter("rol")).thenReturn(null);
-        when(request.getContextPath()).thenReturn("");
-
-        servlet.doGet(request, response);
-
-        verify(response).sendRedirect("/platos");
-    }
-
-    @Test
-    void doGetConfirmarEliminarMuestraElPlatoYSuRestaurante() throws Exception {
-        when(request.getParameter("accion")).thenReturn("confirmarEliminar");
-        when(request.getParameter("id")).thenReturn("2");
-        when(request.getRequestDispatcher("/views/cu33-confirmar-eliminar-plato.jsp")).thenReturn(dispatcher);
-
-        servlet.doGet(request, response);
-
-        verify(request).setAttribute(eq("plato"), notNull());
-        verify(request).setAttribute(eq("restaurante"), notNull());
         verify(dispatcher).forward(request, response);
     }
 
@@ -123,7 +79,7 @@ class PlatoServletTest {
     }
 
     @Test
-    void doPostGuardarSinIngredientesDejaErrorYRedirigeAlAlta() throws Exception {
+    void doPostGuardarSinIngredientesDejaErrorYRedirigeAlListado() throws Exception {
         when(request.getParameter("accion")).thenReturn("guardar");
         when(request.getParameter("nombre")).thenReturn("Plato sin ingredientes " + System.nanoTime());
         when(request.getParameter("restauranteId")).thenReturn("1");
@@ -135,7 +91,7 @@ class PlatoServletTest {
         servlet.doPost(request, response);
 
         verify(session).setAttribute("error", "Debe agregar al menos un insumo con su cantidad y unidad");
-        verify(response).sendRedirect("/platos?accion=nueva");
+        verify(response).sendRedirect("/platos");
     }
 
     @Test

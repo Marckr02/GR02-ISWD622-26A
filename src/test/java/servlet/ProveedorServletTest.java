@@ -17,9 +17,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * TDD (F4.1 / F4.2 proveedores): ProveedorServlet lista, da de alta, muestra
- * confirmacion de eliminacion y procesa "guardar"/"eliminar" contra el
- * ProveedorService real (el servlet no admite inyeccion de dependencias).
+ * TDD (F4.1 / F4.2 proveedores): ProveedorServlet lista proveedores y procesa
+ * "guardar"/"actualizar"/"eliminar" contra el ProveedorService real (el
+ * servlet no admite inyeccion de dependencias); el alta y la confirmacion de
+ * eliminacion viven en modales in-page del listado, no en paginas propias.
  * Cada prueba usa nombres unicos para no chocar con otras pruebas que
  * comparten el mismo almacen estatico en memoria.
  */
@@ -42,50 +43,16 @@ class ProveedorServletTest {
     private HttpSession session;
 
     @Test
-    void doGetSinAccionListaProveedoresYReenviaAlListado() throws Exception {
-        when(request.getParameter("accion")).thenReturn(null);
-        when(request.getRequestDispatcher("/views/cu13-listado-proveedores.jsp")).thenReturn(dispatcher);
+    void doGetListaProveedoresYReenviaAlListado() throws Exception {
+        // El alta y la confirmacion de eliminacion ahora viven solo en modales
+        // in-page del listado: ya no existen paginas propias (cu12/cu25), asi
+        // que doGet ni siquiera lee "accion".
+        when(request.getRequestDispatcher("/views/listado-proveedores.jsp")).thenReturn(dispatcher);
 
         servlet.doGet(request, response);
 
         verify(request).setAttribute(eq("proveedores"), notNull());
         verify(dispatcher).forward(request, response);
-    }
-
-    @Test
-    void doGetConAccionNuevaReenviaAlFormularioDeAlta() throws Exception {
-        when(request.getParameter("accion")).thenReturn("nueva");
-        when(request.getRequestDispatcher("/views/cu12-registrar-proveedor.jsp")).thenReturn(dispatcher);
-
-        servlet.doGet(request, response);
-
-        verify(dispatcher).forward(request, response);
-    }
-
-    @Test
-    void doGetConfirmarEliminarConProveedorExistenteMuestraConfirmacion() throws Exception {
-        Proveedor proveedor = proveedorService.registrarProveedor(
-                "Proveedor prueba " + System.nanoTime(), "0999999999", "prueba@correo.com");
-        when(request.getParameter("accion")).thenReturn("confirmarEliminar");
-        when(request.getParameter("id")).thenReturn(String.valueOf(proveedor.getId()));
-        when(request.getRequestDispatcher("/views/cu25-confirmar-eliminar-proveedor.jsp")).thenReturn(dispatcher);
-
-        servlet.doGet(request, response);
-
-        verify(request).setAttribute("proveedor", proveedor);
-        verify(dispatcher).forward(request, response);
-    }
-
-    @Test
-    void doGetConfirmarEliminarConIdInexistenteRedirigeAlListado() throws Exception {
-        when(request.getParameter("accion")).thenReturn("confirmarEliminar");
-        when(request.getParameter("id")).thenReturn("999999");
-        when(request.getParameter("rol")).thenReturn(null);
-        when(request.getContextPath()).thenReturn("");
-
-        servlet.doGet(request, response);
-
-        verify(response).sendRedirect("/proveedores");
     }
 
     @Test
@@ -118,7 +85,7 @@ class ProveedorServletTest {
 
         verify(session).setAttribute("error",
                 "El telefono debe contener solo numeros, entre 7 y 15 digitos");
-        verify(response).sendRedirect("/proveedores?accion=nueva");
+        verify(response).sendRedirect("/proveedores");
     }
 
     @Test

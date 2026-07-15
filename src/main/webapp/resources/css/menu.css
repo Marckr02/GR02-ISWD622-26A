@@ -81,6 +81,44 @@ body {
     box-shadow: 0 0 0 3px rgba(34, 197, 94, .35);
 }
 
+/* ---------- Filtro por restaurante/marca: selector nativo con forma de pildora
+   (fondo oscuro, borde redondeado, flecha propia) en vez de un grupo de botones. ---------- */
+.selector-marca { position: relative; display: inline-block; }
+.selector-marca select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    display: block;
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: .5rem 2.3rem .5rem 1.1rem;
+    font-size: .82rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+}
+.selector-marca select:hover { border-color: var(--muted); }
+.selector-marca select:focus {
+    outline: none;
+    border-color: transparent;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, .35);
+}
+.selector-marca::after {
+    content: "";
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid var(--muted);
+    border-bottom: 2px solid var(--muted);
+    transform: translateY(-70%) rotate(45deg);
+    pointer-events: none;
+}
+
 .filtros-menu { display: flex; gap: .5rem; flex-wrap: wrap; }
 .filtro-pill {
     display: inline-flex;
@@ -101,6 +139,20 @@ body {
 .filtro-pill.is-on { color: var(--text); background: var(--surface); border-color: var(--muted); }
 .filtro-pill--ok.is-on { color: var(--listo); border-color: var(--listo); }
 .filtro-pill--error.is-on { color: var(--error); border-color: var(--error); }
+
+/* ---------- Indicador de estado (punto de color), igual que en Panel de control ---------- */
+.status-dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    min-width: 9px;
+    border-radius: 50%;
+    margin-right: .5rem;
+    vertical-align: middle;
+    flex: none;
+}
+.status-dot--rojo { background: var(--error); box-shadow: 0 0 0 3px rgba(239, 68, 68, .18); }
+.status-dot--verde { background: var(--listo); box-shadow: 0 0 0 3px rgba(34, 197, 94, .18); }
 
 .menu-grid {
     display: flex;

@@ -42,14 +42,14 @@ public class MetricasServlet extends HttpServlet {
             if ("1".equals(buscar)) {
                 request.setAttribute("sinSeleccion", Boolean.TRUE);
             }
-            request.getRequestDispatcher("/views/cu35-metricas-restaurante.jsp").forward(request, response);
+            request.getRequestDispatcher("/views/metricas-restaurante.jsp").forward(request, response);
             return;
         }
 
         Integer restauranteId = parsearId(restauranteIdParam);
         if (restauranteId == null || restauranteId < 0) {
             request.setAttribute("sinSeleccion", Boolean.TRUE);
-            request.getRequestDispatcher("/views/cu35-metricas-restaurante.jsp").forward(request, response);
+            request.getRequestDispatcher("/views/metricas-restaurante.jsp").forward(request, response);
             return;
         }
 
@@ -80,7 +80,7 @@ public class MetricasServlet extends HttpServlet {
                     metricasService.obtenerTotalPedidosCompletadosPorRestaurante(restauranteId));
         }
 
-        request.getRequestDispatcher("/views/cu35-metricas-restaurante.jsp").forward(request, response);
+        request.getRequestDispatcher("/views/metricas-restaurante.jsp").forward(request, response);
     }
 
     private Integer parsearId(String valor) {

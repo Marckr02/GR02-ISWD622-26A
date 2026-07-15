@@ -1,12 +1,17 @@
 /**
  * Listado de platos (HU30/HU31/HU32/HU33), todo dentro de una sola pagina:
- *  - filtro por restaurante sobre las filas de la tabla;
+ *  - filtro por restaurante + busqueda (por nombre de plato o de ingrediente)
+ *    sobre las tarjetas, todas de altura identica;
+ *  - popover flotante ("+X insumos mas") con la receta completa del plato
+ *    cuando excede el top 3 visible (no expande la tarjeta -- todas deben
+ *    medir siempre lo mismo);
+ *  - menu contextual flotante ("⋮") con Editar/Eliminar, que reemplaza los
+ *    iconos de accion fijos para no competir con el titulo de la receta;
  *  - modal unificado de "Nuevo plato" / "Editar plato" con receta dinamica
  *    de insumos (clona una fila plantilla, igual que en receta.js) y con
  *    scroll interno para la lista de ingredientes;
  *  - modal generico de confirmacion antes de guardar o eliminar, reutilizado
- *    por los tres flujos;
- *  - modal centrado con la receta completa, insumo y cantidad ("+X mas").
+ *    por los tres flujos.
  * Las notificaciones de exito/error usan el Toast Manager global (toast.js),
  * no un componente propio de esta vista. Nada de esto usa AJAX: cada accion
  * confirmada envia el formulario real
@@ -22,89 +27,236 @@
         return select.options[select.selectedIndex].text;
     }
 
-    /**
-     * Modal centrado disparado desde el boton "+X mas" de cada fila: muestra
-     * la receta completa (insumo y cantidad) del plato, con el mismo
-     * componente modal-overlay (fondo oscuro/backdrop-blur) del resto del
-     * sistema, en vez de un popover anclado.
-     */
-    function activarModalIngredientes() {
-        var overlay = document.getElementById("modal-ingredientes");
-        var cuerpo = document.getElementById("modal-ingredientes-cuerpo");
-        var btnCerrar = document.getElementById("modal-ingredientes-cerrar");
-        if (!overlay || !cuerpo) {
+    var GRUPOS_UNIDAD = {
+        "g": ["g", "kg"],
+        "kg": ["g", "kg"],
+        "ml": ["ml", "l"],
+        "l": ["ml", "l"],
+        "unidades": ["unidades"]
+    };
+
+    /** Oculta en el select de unidad las opciones incompatibles con la unidad de
+     *  almacenamiento del insumo seleccionado en esa misma fila (segun el
+     *  data-unidad de la opcion elegida) -- mismos pares que
+     *  ConversionUnidades.java en el servidor, para que nunca se pueda enviar
+     *  una combinacion que el backend fuera a rechazar. Si "unidadPreferida"
+     *  sigue siendo compatible la deja seleccionada; si no, cae a la unidad
+     *  propia del insumo. */
+    function actualizarUnidadesDisponibles(fila, unidadPreferida) {
+        var selInsumo = fila.querySelector("select[name='insumoId[]']");
+        var selUnidad = fila.querySelector("select[name='unidad[]']");
+        if (!selInsumo || !selUnidad) {
             return;
         }
+        var opcionInsumo = selInsumo.options[selInsumo.selectedIndex];
+        var unidadInsumo = opcionInsumo ? opcionInsumo.getAttribute("data-unidad") : null;
+        var permitidas = unidadInsumo ? (GRUPOS_UNIDAD[unidadInsumo] || [unidadInsumo]) : null;
+        var valorPreferido = unidadPreferida || selUnidad.value;
+
+        Array.prototype.forEach.call(selUnidad.options, function (opcion) {
+            opcion.hidden = !!permitidas && permitidas.indexOf(opcion.value) === -1;
+        });
+
+        if (permitidas && permitidas.indexOf(valorPreferido) === -1) {
+            selUnidad.value = unidadInsumo;
+        } else if (valorPreferido) {
+            selUnidad.value = valorPreferido;
+        }
+    }
+
+    /** Posiciona un panel flotante (ya en el DOM, position:fixed) justo debajo
+     *  de "boton", alineado a su borde derecho y sin salirse del viewport. */
+    function posicionarFlotante(panel, boton) {
+        var rect = boton.getBoundingClientRect();
+        var ancho = panel.offsetWidth;
+        var left = Math.max(8, Math.min(rect.right - ancho, window.innerWidth - ancho - 8));
+        panel.style.left = left + "px";
+        panel.style.top = (rect.bottom + 6) + "px";
+    }
+
+    /** Popover flotante del boton "+X insumos mas": la tarjeta jamas cambia de
+     *  tamaño, asi que la receta completa (no solo el resto: todos los
+     *  insumos, incluidos los 3 ya visibles en la tarjeta) vive en este panel
+     *  superpuesto -- fondo con desenfoque, anclado por JS junto al boton que
+     *  lo abre, con su propio boton de cierre (X). El JS lee la receta ya
+     *  serializada por el JSP en data-ingredientes, sin volver a tocar el
+     *  servidor. */
+    function activarPopoverIngredientesExtra() {
+        var botones = document.querySelectorAll(".plato-card__mas-btn");
+        if (!botones.length) {
+            return;
+        }
+        var popoverActual = null;
+        var botonActual = null;
 
         function cerrar() {
-            overlay.style.display = "none";
+            if (popoverActual) { popoverActual.remove(); popoverActual = null; }
+            botonActual = null;
         }
 
         function abrir(boton) {
+            if (botonActual === boton) { cerrar(); return; }
+            cerrar();
+            botonActual = boton;
+
             var ingredientes = [];
-            try {
-                ingredientes = JSON.parse(boton.getAttribute("data-ingredientes-completos") || "[]");
-            } catch (err) {
-                ingredientes = [];
-            }
+            try { ingredientes = JSON.parse(boton.getAttribute("data-ingredientes") || "[]"); } catch (err) { ingredientes = []; }
 
-            cuerpo.innerHTML = "";
+            var pop = document.createElement("div");
+            pop.className = "plato-card__popover";
+
+            var cabecera = document.createElement("div");
+            cabecera.className = "plato-card__popover-cabecera";
+            var titulo = document.createElement("span");
+            titulo.className = "plato-card__popover-titulo";
+            titulo.textContent = boton.getAttribute("data-plato-nombre") || "Receta completa";
+            var btnCerrar = document.createElement("button");
+            btnCerrar.type = "button";
+            btnCerrar.className = "plato-card__popover-cerrar";
+            btnCerrar.setAttribute("aria-label", "Cerrar");
+            btnCerrar.innerHTML = "&times;";
+            btnCerrar.addEventListener("click", cerrar);
+            cabecera.appendChild(titulo);
+            cabecera.appendChild(btnCerrar);
+            pop.appendChild(cabecera);
+
+            var lista = document.createElement("div");
+            lista.className = "plato-card__popover-lista";
             ingredientes.forEach(function (ing) {
-                var fila = document.createElement("tr");
-
-                var celdaNombre = document.createElement("td");
-                celdaNombre.textContent = ing.nombre;
-
-                var celdaCantidad = document.createElement("td");
-                celdaCantidad.className = "num";
-                celdaCantidad.textContent = ing.cantidad + " " + ing.unidad;
-
-                fila.appendChild(celdaNombre);
-                fila.appendChild(celdaCantidad);
-                cuerpo.appendChild(fila);
+                var fila = document.createElement("div");
+                fila.className = "plato-card__popover-fila";
+                var nombre = document.createElement("span");
+                nombre.textContent = ing.nombre;
+                var cantidad = document.createElement("span");
+                cantidad.className = "plato-card__popover-cantidad";
+                cantidad.textContent = ing.cantidad;
+                fila.appendChild(nombre);
+                fila.appendChild(cantidad);
+                lista.appendChild(fila);
             });
+            pop.appendChild(lista);
 
-            overlay.style.display = "flex";
+            document.body.appendChild(pop);
+            popoverActual = pop;
+            posicionarFlotante(pop, boton);
         }
 
-        document.querySelectorAll(".pill--mas").forEach(function (boton) {
+        botones.forEach(function (boton) {
             boton.addEventListener("click", function (e) {
                 e.stopPropagation();
                 abrir(boton);
             });
         });
 
-        if (btnCerrar) { btnCerrar.addEventListener("click", cerrar); }
-        overlay.addEventListener("click", function (e) {
-            if (e.target === overlay) { cerrar(); }
+        document.addEventListener("click", function (e) {
+            if (popoverActual && !popoverActual.contains(e.target) && e.target !== botonActual) {
+                cerrar();
+            }
         });
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") { cerrar(); }
+        });
+        window.addEventListener("scroll", cerrar, true);
     }
 
-    /** Filtro por restaurante + busqueda por nombre, combinados, sobre las filas de la tabla de platos. */
+    /** Menu contextual flotante ("⋮" -> Editar / Eliminar) de cada tarjeta:
+     *  recibe las mismas funciones que ya manejan esas acciones (definidas
+     *  mas abajo) para no duplicar logica, solo cambia de donde se disparan. */
+    function activarMenuAccionesPlato(abrirEditarFn, eliminarFn) {
+        var botones = document.querySelectorAll(".plato-card__menu-btn");
+        if (!botones.length) {
+            return;
+        }
+        var menuActual = null;
+        var botonActual = null;
+
+        function cerrar() {
+            if (menuActual) { menuActual.remove(); menuActual = null; }
+            if (botonActual) { botonActual.setAttribute("aria-expanded", "false"); }
+            botonActual = null;
+        }
+
+        function abrir(boton) {
+            if (botonActual === boton) { cerrar(); return; }
+            cerrar();
+            botonActual = boton;
+            boton.setAttribute("aria-expanded", "true");
+
+            var menu = document.createElement("div");
+            menu.className = "plato-card__menu-flotante";
+            menu.setAttribute("role", "menu");
+
+            var itemEditar = document.createElement("button");
+            itemEditar.type = "button";
+            itemEditar.className = "plato-card__menu-item";
+            itemEditar.setAttribute("role", "menuitem");
+            itemEditar.textContent = "Editar";
+            itemEditar.addEventListener("click", function () {
+                cerrar();
+                abrirEditarFn(boton);
+            });
+
+            var itemEliminar = document.createElement("button");
+            itemEliminar.type = "button";
+            itemEliminar.className = "plato-card__menu-item plato-card__menu-item--danger";
+            itemEliminar.setAttribute("role", "menuitem");
+            itemEliminar.textContent = "Eliminar";
+            itemEliminar.addEventListener("click", function () {
+                cerrar();
+                eliminarFn(boton);
+            });
+
+            menu.appendChild(itemEditar);
+            menu.appendChild(itemEliminar);
+            document.body.appendChild(menu);
+            menuActual = menu;
+            posicionarFlotante(menu, boton);
+        }
+
+        botones.forEach(function (boton) {
+            boton.addEventListener("click", function (e) {
+                e.stopPropagation();
+                abrir(boton);
+            });
+        });
+
+        document.addEventListener("click", function (e) {
+            if (menuActual && !menuActual.contains(e.target) && e.target !== botonActual) {
+                cerrar();
+            }
+        });
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") { cerrar(); }
+        });
+        window.addEventListener("scroll", cerrar, true);
+    }
+
+    /** Filtro por restaurante + busqueda (nombre del plato o de cualquiera de
+     *  sus ingredientes, via data-busqueda), combinados, sobre las tarjetas. */
     function activarFiltroRestaurante() {
         var select = document.getElementById("filtro-restaurante");
         var buscador = document.getElementById("buscador-platos");
-        var tabla = document.getElementById("tabla-platos");
-        if (!tabla) {
+        var lista = document.getElementById("lista-platos");
+        if (!lista) {
             return;
         }
-        var filaSinResultados = document.getElementById("sin-resultados-fila");
+        var sinResultados = document.getElementById("sin-resultados-platos");
 
         function aplicar() {
             var restauranteId = select ? select.value : "";
             var consulta = buscador ? buscador.value.trim().toLowerCase() : "";
-            var filas = tabla.querySelectorAll("tbody tr[data-restaurante-id]");
+            var tarjetas = lista.querySelectorAll(".plato-card");
             var visibles = 0;
-            Array.prototype.forEach.call(filas, function (fila) {
-                var coincideRestaurante = !restauranteId || fila.getAttribute("data-restaurante-id") === restauranteId;
-                var nombre = fila.getAttribute("data-nombre") || "";
-                var coincideTexto = !consulta || nombre.indexOf(consulta) !== -1;
+            Array.prototype.forEach.call(tarjetas, function (tarjeta) {
+                var coincideRestaurante = !restauranteId || tarjeta.getAttribute("data-restaurante-id") === restauranteId;
+                var haystack = tarjeta.getAttribute("data-busqueda") || tarjeta.getAttribute("data-nombre") || "";
+                var coincideTexto = !consulta || haystack.indexOf(consulta) !== -1;
                 var visible = coincideRestaurante && coincideTexto;
-                fila.style.display = visible ? "" : "none";
+                tarjeta.style.display = visible ? "" : "none";
                 if (visible) { visibles += 1; }
             });
-            if (filaSinResultados) {
-                filaSinResultados.hidden = visibles !== 0;
+            if (sinResultados) {
+                sinResultados.hidden = visibles !== 0;
             }
         }
 
@@ -115,7 +267,7 @@
 
     document.addEventListener("DOMContentLoaded", function () {
         activarFiltroRestaurante();
-        activarModalIngredientes();
+        activarPopoverIngredientesExtra();
 
         // ---------- Receta dinamica dentro del modal (nuevo / editar) ----------
         var contenedor = document.getElementById("receta-filas");
@@ -180,6 +332,7 @@
                 inpCantidad.value = "";
                 selUnidad.value = "g";
             }
+            actualizarUnidadesDisponibles(fila, datos ? datos.unidad : null);
             contenedor.appendChild(fila);
             return fila;
         }
@@ -217,6 +370,7 @@
             contenedor.addEventListener("change", function (e) {
                 if (e.target.matches("select[name='insumoId[]']")) {
                     marcarRepetidos();
+                    actualizarUnidadesDisponibles(e.target.closest(".receta__fila"));
                 }
             });
 
@@ -359,10 +513,6 @@
             });
         }
 
-        document.querySelectorAll(".plato-editar").forEach(function (boton) {
-            boton.addEventListener("click", function () { abrirEditar(boton); });
-        });
-
         if (formPlato) {
             formPlato.addEventListener("submit", function (e) {
                 e.preventDefault();
@@ -390,19 +540,21 @@
         // ---------- Eliminar plato ----------
         var formEliminar = document.getElementById("form-eliminar-plato");
         var campoEliminarId = document.getElementById("eliminar-plato-id");
-        document.querySelectorAll(".plato-eliminar").forEach(function (boton) {
-            boton.addEventListener("click", function () {
-                var id = boton.getAttribute("data-id");
-                var nombre = boton.getAttribute("data-nombre") || "este plato";
-                if (campoEliminarId) { campoEliminarId.value = id; }
-                mostrarConfirmacion(formEliminar, {
-                    titulo: "Eliminar plato",
-                    intro: "Esta acción no se puede deshacer.",
-                    campos: [{ clave: "Plato", valor: nombre }],
-                    confirmarTexto: "Eliminar",
-                    confirmarClase: "btn--danger"
-                });
+        function accionEliminar(boton) {
+            var id = boton.getAttribute("data-id");
+            var nombre = boton.getAttribute("data-nombre") || "este plato";
+            if (campoEliminarId) { campoEliminarId.value = id; }
+            mostrarConfirmacion(formEliminar, {
+                titulo: "Eliminar plato",
+                intro: "Esta acción no se puede deshacer.",
+                campos: [{ clave: "Plato", valor: nombre }],
+                confirmarTexto: "Eliminar",
+                confirmarClase: "btn--danger"
             });
-        });
+        }
+
+        // El menu contextual ("⋮") de cada tarjeta dispara estas mismas
+        // funciones de edicion/eliminacion -- ver activarMenuAccionesPlato.
+        activarMenuAccionesPlato(abrirEditar, accionEliminar);
     });
 })();

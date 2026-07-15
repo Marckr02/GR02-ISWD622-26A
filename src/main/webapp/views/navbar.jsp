@@ -29,7 +29,6 @@
             {"tablero",        "Tablero",        "/pedidos"},
             {"disponibilidad", "Disponibilidad", "/disponibilidad"},
             {"inventario",     "Inventario",     "/insumos"},
-            {"menu",           "Menú",       "/menu"},
             {"monitoreo",      "Panel de control", "/monitoreo"},
             {"proveedores",    "Proveedores",    "/proveedores"},
             {"restaurantes",   "Restaurantes",   "/restaurantes"},

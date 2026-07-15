@@ -9,6 +9,19 @@
     List<DisponibilidadPlato> menu = (List<DisponibilidadPlato>) request.getAttribute("menu");
     RestauranteService restauranteService = (RestauranteService) request.getAttribute("restauranteService");
     String ctx = request.getContextPath();
+
+    // Marcas presentes en el menu actual (nombre -> color), en orden alfabetico,
+    // para pintar el filtro por restaurante (asi el salto por teclado del
+    // <select> nativo, al escribir una letra, es predecible).
+    java.util.TreeMap<String, String> marcasMenu = new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    if (menu != null) {
+        for (DisponibilidadPlato d : menu) {
+            Restaurante r = (restauranteService == null) ? null : restauranteService.buscar(d.getPlato().getRestauranteId());
+            String nombreMarca = (r == null) ? "Sin marca" : r.getNombre();
+            marcasMenu.putIfAbsent(nombreMarca, (r == null) ? "#8b97a6"
+                    : ((r.getColor() != null && !r.getColor().isBlank()) ? r.getColor() : ColorMarca.paraNombre(r.getNombre())));
+        }
+    }
 %>
 <%!
     /** Color de marca del restaurante (el asignado, o uno de respaldo si no tiene o no existe). */
@@ -46,10 +59,24 @@
                         <input type="text" id="buscador-disponibilidad" class="input-filtro"
                                placeholder="Buscar plato..." aria-label="Buscar plato por nombre">
                     </div>
+                    <% if (!marcasMenu.isEmpty()) { %>
+                    <div class="selector-marca">
+                        <select id="filtro-marca-disponibilidad" aria-label="Filtrar platos por restaurante">
+                            <option value="todos" selected>Todos los restaurantes</option>
+                            <% for (java.util.Map.Entry<String, String> entradaMarca : marcasMenu.entrySet()) { %>
+                            <option value="<%= attr(entradaMarca.getKey().toLowerCase()) %>"><%= entradaMarca.getKey() %></option>
+                            <% } %>
+                        </select>
+                    </div>
+                    <% } %>
                     <div class="filtros-menu" id="filtros-menu" role="group" aria-label="Filtrar platos por estado">
                         <button type="button" class="filtro-pill is-on" data-filtro="todos">Todos</button>
-                        <button type="button" class="filtro-pill filtro-pill--ok" data-filtro="disponible">Disponibles</button>
-                        <button type="button" class="filtro-pill filtro-pill--error" data-filtro="bloqueado">Bloqueados</button>
+                        <button type="button" class="filtro-pill filtro-pill--ok" data-filtro="disponible">
+                            <span class="status-dot status-dot--verde"></span>Disponibles
+                        </button>
+                        <button type="button" class="filtro-pill filtro-pill--error" data-filtro="bloqueado">
+                            <span class="status-dot status-dot--rojo"></span>Bloqueados
+                        </button>
                     </div>
                 </div>
             </div>
@@ -63,6 +90,7 @@
                     <article class="dish-circle <%= bloqueado ? "dish-circle--bloqueado" : "" %>"
                              data-estado="<%= bloqueado ? "bloqueado" : "disponible" %>"
                              data-nombre="<%= d.getPlato().getNombre().toLowerCase() %>"
+                             data-restaurante="<%= attr(nombreMarca.toLowerCase()) %>"
                              style="--marca: <%= colorDeMarca(restaurante) %>;">
                         <p class="dish-circle__marca"><%= nombreMarca %></p>
                         <h3 class="dish-circle__nombre"><%= d.getPlato().getNombre() %></h3>
