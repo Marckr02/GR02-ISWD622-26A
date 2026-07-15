@@ -96,7 +96,6 @@
     <link rel="stylesheet" href="<%= ctx %>/resources/css/kanban.css">
     <link rel="stylesheet" href="<%= ctx %>/resources/css/main.css">
     <style>
-        .card__acciones { display: flex; flex-wrap: wrap; gap: .4rem; }
         .sin-seccion {
             max-width: 460px; margin: 4.5rem auto; text-align: center;
             background: var(--surface); border: 1px solid var(--border);
@@ -446,51 +445,54 @@
                     String etiquetaAvance = policy.etiquetaSiguienteAccion(estado);
                     String etiquetaRetro = policy.etiquetaRetroceso(estado);
                     boolean esFinalizacion = (estado == EstadoPedido.LISTO);
+                    boolean tieneAcciones = puedeOperar && (policy.puedeAvanzar(estado) || policy.puedeRetroceder(estado));
                     String colorPedido = colorDeMarca(pedido.getMarca(), colorPorMarca);
-                    String textoHeaderPedido = ColorMarca.textoLegibleSobre(colorPedido); %>
+                    String textoMembretePedido = ColorMarca.textoLegibleSobre(colorPedido); %>
             <article class="ticket-card" data-marca="<%= attr(pedido.getMarca()) %>" style="--marca: <%= colorPedido %>;">
-                <div class="ticket-header" style="color: <%= textoHeaderPedido %>;">
-                    <%= pedido.getMarca() %>
+                <div class="ticket-card__membrete" style="color: <%= textoMembretePedido %>;">
+                    <p class="ticket-card__marca"><%= pedido.getMarca() %></p>
                 </div>
-                <div class="ticket-body">
-                    <div class="card__id">#<%= pedido.getId() %></div>
-                    <p class="card__desc"><%= pedido.getDescripcion() %></p>
-                    <% if (puedeOperar && (policy.puedeAvanzar(estado) || policy.puedeRetroceder(estado))) { %>
-                    <div class="card__acciones">
-                        <% if (policy.puedeRetroceder(estado)) { %>
-                        <form method="post" action="<%= ctx %>/pedidos" class="card__action form-retroceder"
-                              data-fase-actual="<%= estado.getEtiqueta() %>"
-                              data-fase-actual-clave="<%= estado.name() %>"
-                              data-fase-destino="<%= estado.anterior().getEtiqueta() %>"
-                              data-fase-destino-clave="<%= estado.anterior().name() %>">
-                            <input type="hidden" name="accion" value="retroceder">
-                            <input type="hidden" name="pedidoId" value="<%= pedido.getId() %>">
-                            <input type="hidden" name="rol" value="<%= rol.name() %>">
-                            <button type="submit" class="btn-icon btn-icon--retro" title="<%= etiquetaRetro %>" aria-label="<%= etiquetaRetro %>">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 5l-7 7 7 7"/></svg>
-                            </button>
-                        </form>
-                        <% } %>
-                        <% if (policy.puedeAvanzar(estado)) { %>
-                        <form method="post" action="<%= ctx %>/pedidos" class="card__action">
-                            <input type="hidden" name="accion" value="mover">
-                            <input type="hidden" name="pedidoId" value="<%= pedido.getId() %>">
-                            <input type="hidden" name="rol" value="<%= rol.name() %>">
-                            <button type="submit" class="btn-icon btn-icon--avanzar" title="<%= etiquetaAvance %>" aria-label="<%= etiquetaAvance %>">
-                                <% if (esFinalizacion) { %>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-                                <% } else { %>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-                                <% } %>
-                            </button>
-                        </form>
+
+                <div class="ticket-card__body">
+                    <% if (puedeOperar && policy.puedeRetroceder(estado)) { %>
+                    <form method="post" action="<%= ctx %>/pedidos" class="card__action ticket-card__nav ticket-card__nav--retro form-retroceder"
+                          data-fase-actual="<%= estado.getEtiqueta() %>"
+                          data-fase-actual-clave="<%= estado.name() %>"
+                          data-fase-destino="<%= estado.anterior().getEtiqueta() %>"
+                          data-fase-destino-clave="<%= estado.anterior().name() %>">
+                        <input type="hidden" name="accion" value="retroceder">
+                        <input type="hidden" name="pedidoId" value="<%= pedido.getId() %>">
+                        <input type="hidden" name="rol" value="<%= rol.name() %>">
+                        <button type="submit" class="btn-icon btn-icon--retro" title="<%= etiquetaRetro %>" aria-label="<%= etiquetaRetro %>">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 5l-7 7 7 7"/></svg>
+                        </button>
+                    </form>
+                    <% } %>
+
+                    <div class="ticket-card__content">
+                        <h3 class="ticket-card__plato"><%= pedido.getDescripcion() %></h3>
+                        <span class="ticket-card__id">#<%= pedido.getId() %></span>
+                        <% if (!tieneAcciones && estado.esFinal()) { %>
+                        <span class="card__done">Completado</span>
                         <% } %>
                     </div>
-                    <% } else if (estado.esFinal()) { %>
-                    <span class="card__done">Completado</span>
+
+                    <% if (puedeOperar && policy.puedeAvanzar(estado)) { %>
+                    <form method="post" action="<%= ctx %>/pedidos" class="card__action ticket-card__nav ticket-card__nav--avanzar">
+                        <input type="hidden" name="accion" value="mover">
+                        <input type="hidden" name="pedidoId" value="<%= pedido.getId() %>">
+                        <input type="hidden" name="rol" value="<%= rol.name() %>">
+                        <button type="submit" class="btn-icon btn-icon--avanzar" title="<%= etiquetaAvance %>" aria-label="<%= etiquetaAvance %>">
+                            <% if (esFinalizacion) { %>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+                            <% } else { %>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                            <% } %>
+                        </button>
+                    </form>
                     <% } %>
                 </div>
             </article>

@@ -1,6 +1,6 @@
 /**
- * Logica compartida por las tres vistas de menu/disponibilidad (cu7, cu9, cu10):
- * filtro por estado (todos/disponible/bloqueado) + busqueda opcional por nombre
+ * Logica compartida por las vistas de menu/disponibilidad (disponibilidad-cocinero.jsp
+ * y panel-monitoreo.jsp): filtro por estado (todos/disponible/bloqueado) + busqueda opcional por nombre
  * sobre las tarjetas ".dish-circle", y el popover flotante de insumos faltantes
  * para los platos bloqueados. Una sola implementacion evita que las vistas se
  * desincronicen entre si (el bug anterior: cada vista tenia su propia copia).

@@ -36,7 +36,7 @@ class MonitoreoServletTest {
 
     @Test
     void doGetExponeInsumosCriticosYMenuYReenviaAlPanel() throws Exception {
-        when(request.getRequestDispatcher("/views/cu9-panel-monitoreo.jsp")).thenReturn(dispatcher);
+        when(request.getRequestDispatcher("/views/panel-monitoreo.jsp")).thenReturn(dispatcher);
 
         servlet.doGet(request, response);
 

@@ -97,8 +97,7 @@ public class PedidoService {
         }
         Restaurante restaurante = restauranteDao.buscarPorId(plato.getRestauranteId());
         String marca = (restaurante != null) ? restaurante.getNombre() : "Generica";
-        String descripcion = plato.getNombre() + " - " + marca;
-        Pedido pedido = new Pedido(0, descripcion, marca, EstadoPedido.RECIBIDO, plato.getId());
+        Pedido pedido = new Pedido(0, plato.getNombre(), marca, EstadoPedido.RECIBIDO, plato.getId());
         return pedidoDao.guardar(pedido);
     }
 

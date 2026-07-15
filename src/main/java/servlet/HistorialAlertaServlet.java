@@ -14,7 +14,7 @@ import java.io.IOException;
  * Historial de alertas de stock critico (HU11). Solo lista lo ya
  * registrado; el registro ocurre en tiempo real dentro de InsumoService y
  * PedidoService, justo cuando el stock de un insumo cambia y cruza el
- * umbral critico (y al arrancar la aplicacion, ver AlertaStockInicializador).
+ * umbral critico.
  * Acceso restringido a ADMINISTRADOR por AuthFilter.
  */
 @WebServlet("/alertas")
@@ -28,6 +28,6 @@ public class HistorialAlertaServlet extends HttpServlet {
             throws ServletException, IOException {
         request.setAttribute("alertas", alertaStockService.listarHistorial());
         request.setAttribute("criticosActuales", insumoService.listarInsumosCriticos());
-        request.getRequestDispatcher("/views/cu11-historial-alertas.jsp").forward(request, response);
+        request.getRequestDispatcher("/views/historial-alertas.jsp").forward(request, response);
     }
 }

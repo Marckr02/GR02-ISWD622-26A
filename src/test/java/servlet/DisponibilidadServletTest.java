@@ -38,7 +38,7 @@ class DisponibilidadServletTest {
 
     @Test
     void doGetCalculaElMenuYReenviaALaVistaDelCocinero() throws Exception {
-        when(request.getRequestDispatcher("/views/cu10-disponibilidad-cocinero.jsp")).thenReturn(dispatcher);
+        when(request.getRequestDispatcher("/views/disponibilidad-cocinero.jsp")).thenReturn(dispatcher);
 
         servlet.doGet(request, response);
 

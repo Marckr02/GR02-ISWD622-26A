@@ -5,9 +5,18 @@
 <%@ page import="model.Restaurante" %>
 <%@ page import="model.Insumo" %>
 <%@ page import="service.PlatoService" %>
+<%@ page import="util.ColorMarca" %>
 <%
     List<Plato> platos = (List<Plato>) request.getAttribute("platos");
     List<Restaurante> restaurantes = (List<Restaurante>) request.getAttribute("restaurantes");
+    // Copia ordenada alfabeticamente (sin mutar la lista original) para que el
+    // filtro por restaurante de la toolbar y el select del modal de nuevo/editar
+    // plato listen en orden alfabetico -- asi el salto por teclado del <select>
+    // nativo, al escribir una letra, es predecible.
+    if (restaurantes != null) {
+        restaurantes = new java.util.ArrayList<>(restaurantes);
+        restaurantes.sort(java.util.Comparator.comparing(Restaurante::getNombre, String.CASE_INSENSITIVE_ORDER));
+    }
     List<Insumo> insumos = (List<Insumo>) request.getAttribute("insumos");
     PlatoService platoService = (PlatoService) request.getAttribute("platoService");
     String ctx = request.getContextPath();
@@ -43,31 +52,60 @@
         return valor == null ? "" : valor.replace("\"", "&quot;");
     }
 
+    /** Color efectivo de la marca del restaurante (el asignado, o un respaldo determinista
+     *  si no tiene ninguno o el plato quedo huerfano), mismo criterio que el resto del sistema. */
+    private String colorDeMarca(Restaurante r) {
+        if (r == null) { return "#8b97a6"; }
+        return (r.getColor() != null && !r.getColor().isBlank()) ? r.getColor() : ColorMarca.paraNombre(r.getNombre());
+    }
+
+    /** Copia los ingredientes ordenados de mayor a menor cantidad (sin mutar la lista
+     *  original del plato, que el modal de edicion sigue poblando en su orden real). */
+    private List<IngredientePlato> ordenadosPorCantidad(List<IngredientePlato> ingredientes) {
+        List<IngredientePlato> copia = new java.util.ArrayList<>(ingredientes);
+        copia.sort((a, b) -> Double.compare(b.getCantidad(), a.getCantidad()));
+        return copia;
+    }
+
+    /** Cantidad sin decimales innecesarios: 250.0 -> "250", 2.5 -> "2.5". */
+    private String formatearCantidad(double cantidad) {
+        if (cantidad == Math.rint(cantidad) && !Double.isInfinite(cantidad)) {
+            return String.valueOf((long) cantidad);
+        }
+        return String.valueOf(cantidad);
+    }
+
+    /** Escapa un texto para incrustarlo como literal (comillas/backslash) dentro de un atributo JSON. */
+    private String jsonTexto(String valor) {
+        return valor == null ? "" : valor.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    /** Serializa, desde el indice "desde" en adelante, nombre + cantidad ya formateada de cada
+     *  ingrediente restante -- alimenta el popover flotante del boton "+X ingredientes". */
+    private String extraIngredientesJson(List<IngredientePlato> ingredientes, int desde, PlatoService platoService) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = desde; i < ingredientes.size(); i++) {
+            IngredientePlato ing = ingredientes.get(i);
+            if (i > desde) { sb.append(","); }
+            Insumo insumo = platoService.insumoDe(ing.getInsumoId());
+            String nombre = (insumo == null) ? ("#" + ing.getInsumoId()) : insumo.getNombre();
+            String unidad = (ing.getUnidadReceta() == null)
+                    ? (insumo == null ? "" : insumo.getUnidad())
+                    : ing.getUnidadReceta();
+            String cantidadTexto = formatearCantidad(ing.getCantidad()) + " " + unidad;
+            sb.append("{\"nombre\":\"").append(jsonTexto(nombre)).append("\"")
+              .append(",\"cantidad\":\"").append(jsonTexto(cantidadTexto)).append("\"}");
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
     /** Escapa un texto para incrustarlo como literal dentro de un &lt;script&gt; (toast). */
     private String js(String valor) {
         if (valor == null) { return ""; }
         return valor.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "").replace("\n", " ");
     }
 
-    /** Serializa nombre/cantidad/unidad de cada ingrediente para el popover de "+X mas". */
-    private String ingredientesResumenJson(List<IngredientePlato> ingredientes, PlatoService platoService) {
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < ingredientes.size(); i++) {
-            IngredientePlato ing = ingredientes.get(i);
-            if (i > 0) { sb.append(","); }
-            Insumo insumo = platoService.insumoDe(ing.getInsumoId());
-            String nombre = (insumo == null) ? ("#" + ing.getInsumoId()) : insumo.getNombre();
-            String unidad = (ing.getUnidadReceta() == null)
-                    ? (insumo == null ? "" : insumo.getUnidad())
-                    : ing.getUnidadReceta();
-            String nombreJson = nombre.replace("\\", "\\\\").replace("\"", "\\\"");
-            sb.append("{\"nombre\":\"").append(nombreJson).append("\"")
-              .append(",\"cantidad\":").append(ing.getCantidad())
-              .append(",\"unidad\":\"").append(unidad).append("\"}");
-        }
-        sb.append("]");
-        return sb.toString();
-    }
 %>
 <!DOCTYPE html>
 <html lang="es">
@@ -104,9 +142,9 @@
     <section class="panel">
         <div class="gestion-toolbar">
             <div class="gestion-toolbar__buscar">
-                <div class="buscador">
+                <div class="buscador buscador--platos">
                     <input type="text" id="buscador-platos" class="input-filtro"
-                           placeholder="Buscar plato..." aria-label="Buscar plato por nombre">
+                           placeholder="Buscar platillo o ingrediente..." aria-label="Buscar platillo o ingrediente">
                 </div>
                 <select id="filtro-restaurante" aria-label="Filtrar por restaurante">
                     <option value="">Todos los restaurantes</option>
@@ -122,53 +160,65 @@
         <% if (platos == null || platos.isEmpty()) { %>
             <p class="vacio">No hay platos registrados</p>
         <% } else { %>
-            <table class="tabla" id="tabla-platos">
-                <thead>
-                    <tr>
-                        <th>Plato</th>
-                        <th>Restaurante</th>
-                        <th>Ingredientes</th>
-                        <th>Accion</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% for (Plato p : platos) {
-                           Restaurante restaurante = platoService.restauranteDe(p);
-                           List<IngredientePlato> ingredientes = p.getIngredientes();
-                           int total = ingredientes.size();
-                           int mostrar = Math.min(3, total); %>
-                        <tr data-restaurante-id="<%= p.getRestauranteId() %>" data-nombre="<%= attr(p.getNombre().toLowerCase()) %>">
-                            <td><%= p.getNombre() %></td>
-                            <td><%= restaurante == null ? "—" : restaurante.getNombre() %></td>
-                            <td>
-                                <% for (int idx = 0; idx < mostrar; idx++) {
+            <div class="plato-lista" id="lista-platos">
+                <% for (Plato p : platos) {
+                       Restaurante restaurante = platoService.restauranteDe(p);
+                       String colorPlato = colorDeMarca(restaurante);
+                       String nombreRestaurante = restaurante == null ? "Sin restaurante" : restaurante.getNombre();
+                       List<IngredientePlato> ingredientesOriginal = p.getIngredientes();
+                       List<IngredientePlato> ingredientes = ordenadosPorCantidad(ingredientesOriginal);
+                       int total = ingredientes.size();
+                       int top = Math.min(3, total);
+
+                       // Texto de busqueda: nombre del plato + nombre de todos los insumos (no solo
+                       // el top 3 visible), para que el buscador tambien encuentre por ingrediente.
+                       StringBuilder busqueda = new StringBuilder(p.getNombre().toLowerCase());
+                       for (IngredientePlato ing : ingredientesOriginal) {
+                           Insumo insumoBusqueda = platoService.insumoDe(ing.getInsumoId());
+                           if (insumoBusqueda != null) { busqueda.append(' ').append(insumoBusqueda.getNombre().toLowerCase()); }
+                       } %>
+                    <article class="plato-card" data-restaurante-id="<%= p.getRestauranteId() %>"
+                             data-nombre="<%= attr(p.getNombre().toLowerCase()) %>"
+                             data-busqueda="<%= attr(busqueda.toString()) %>" style="--marca: <%= colorPlato %>;">
+                        <div class="plato-card__fila-superior">
+                            <div class="plato-card__titulos">
+                                <h3 class="plato-card__nombre" title="<%= attr(p.getNombre()) %>"><%= p.getNombre() %></h3>
+                                <p class="plato-card__restaurante"><span class="plato-card__dot" aria-hidden="true"></span><%= nombreRestaurante %></p>
+                            </div>
+                            <button type="button" class="plato-card__menu-btn" title="Más acciones" aria-label="Más acciones para <%= attr(p.getNombre()) %>"
+                                    aria-haspopup="true" aria-expanded="false"
+                                    data-id="<%= p.getId() %>"
+                                    data-nombre="<%= attr(p.getNombre()) %>"
+                                    data-restaurante-id="<%= p.getRestauranteId() %>"
+                                    data-ingredientes='<%= ingredientesJson(ingredientesOriginal) %>'>&#8942;</button>
+                        </div>
+                        <% if (total == 0) { %>
+                            <p class="plato-card__sin">Sin ingredientes</p>
+                        <% } else { %>
+                            <ul class="plato-card__ingredientes">
+                                <% for (int idx = 0; idx < top; idx++) {
                                        IngredientePlato ing = ingredientes.get(idx);
                                        Insumo insumo = platoService.insumoDe(ing.getInsumoId());
                                        String nombreInsumo = (insumo == null) ? ("#" + ing.getInsumoId()) : insumo.getNombre();
                                        String unidad = (ing.getUnidadReceta() == null)
                                                ? (insumo == null ? "" : insumo.getUnidad())
                                                : ing.getUnidadReceta(); %>
-                                    <span class="pill"><%= nombreInsumo %> &middot; <%= ing.getCantidad() %> <%= unidad %></span>
-                                <% } if (total > mostrar) { %>
-                                    <button type="button" class="pill pill--mas"
-                                            data-ingredientes-completos='<%= ingredientesResumenJson(ingredientes, platoService) %>'>+<%= (total - mostrar) %> m&aacute;s</button>
+                                    <li class="plato-card__fila-ingrediente">
+                                        <span class="plato-card__ing-nombre"><%= nombreInsumo %></span>
+                                        <span class="plato-card__ing-cantidad"><%= formatearCantidad(ing.getCantidad()) %> <%= unidad %></span>
+                                    </li>
                                 <% } %>
-                            </td>
-                            <td class="tabla__acciones">
-                                <button type="button" class="tabla__accion-icono plato-editar" title="Editar plato" aria-label="Editar plato"
-                                        data-id="<%= p.getId() %>"
-                                        data-nombre="<%= attr(p.getNombre()) %>"
-                                        data-restaurante-id="<%= p.getRestauranteId() %>"
-                                        data-ingredientes='<%= ingredientesJson(ingredientes) %>'>&#9998;</button>
-                                <button type="button" class="tabla__accion-icono tabla__accion-icono--eliminar plato-eliminar" title="Eliminar plato" aria-label="Eliminar plato"
-                                        data-id="<%= p.getId() %>"
-                                        data-nombre="<%= attr(p.getNombre()) %>">&#128465;</button>
-                            </td>
-                        </tr>
-                    <% } %>
-                    <tr id="sin-resultados-fila" hidden><td colspan="4" class="vacio">Ningun plato coincide con el filtro.</td></tr>
-                </tbody>
-            </table>
+                            </ul>
+                            <% if (total > top) { %>
+                                <button type="button" class="plato-card__mas-btn"
+                                        data-plato-nombre="<%= attr(p.getNombre()) %>"
+                                        data-ingredientes='<%= extraIngredientesJson(ingredientes, 0, platoService) %>'>+ <%= (total - top) %> insumo<%= (total - top) == 1 ? "" : "s" %> m&aacute;s</button>
+                            <% } %>
+                        <% } %>
+                    </article>
+                <% } %>
+                <p class="vacio" id="sin-resultados-platos" hidden>Ningun plato coincide con el filtro.</p>
+            </div>
         <% } %>
     </section>
 </main>
@@ -204,7 +254,7 @@
                             <select name="insumoId[]" required disabled>
                                 <option value="">-- Insumo --</option>
                                 <% if (insumos != null) { for (Insumo i : insumos) { %>
-                                    <option value="<%= i.getId() %>"><%= i.getNombre() %></option>
+                                    <option value="<%= i.getId() %>" data-unidad="<%= attr(i.getUnidad()) %>"><%= i.getNombre() %></option>
                                 <% } } %>
                             </select>
                         </label>
@@ -254,22 +304,6 @@
         <div class="modal__acciones">
             <button type="button" class="btn btn--ghost" id="modal-cancelar">Cancelar</button>
             <button type="button" class="btn btn--ok" id="modal-confirmar">Confirmar</button>
-        </div>
-    </div>
-</div>
-
-<!-- Modal centrado con la receta completa (ingredientes + cantidad), disparado desde el boton "+X mas" de la fila -->
-<div class="modal-overlay" id="modal-ingredientes" role="dialog" aria-modal="true" aria-labelledby="modal-ingredientes-titulo">
-    <div class="modal modal--ancho">
-        <h3 id="modal-ingredientes-titulo">Ingredientes del plato</h3>
-        <div class="modal__scroll">
-            <table class="tabla" id="tabla-ingredientes-modal">
-                <thead><tr><th>Insumo</th><th class="num">Cantidad</th></tr></thead>
-                <tbody id="modal-ingredientes-cuerpo"></tbody>
-            </table>
-        </div>
-        <div class="modal__acciones">
-            <button type="button" class="btn btn--ghost" id="modal-ingredientes-cerrar">Cerrar</button>
         </div>
     </div>
 </div>

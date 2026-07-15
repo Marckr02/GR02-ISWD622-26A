@@ -5,16 +5,15 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import model.Proveedor;
 import service.ProveedorService;
 
 import java.io.IOException;
 
 /**
- * Controlador de proveedores (F4.1). GET sin parametros lista los
- * proveedores (cu13); GET con accion=nueva muestra el formulario de alta
- * (cu12); GET con accion=confirmarEliminar muestra la pantalla de
- * confirmacion (cu25). POST procesa "guardar" y "eliminar".
+ * Controlador de proveedores (F4.1). GET siempre lista los proveedores
+ * (listado-proveedores.jsp); el alta y la confirmacion de eliminacion viven
+ * en modales in-page de esa misma vista, no en paginas propias. POST procesa
+ * "guardar", "actualizar" y "eliminar".
  */
 @WebServlet("/proveedores")
 public class ProveedorServlet extends HttpServlet {
@@ -24,24 +23,8 @@ public class ProveedorServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String accion = request.getParameter("accion");
-        if ("nueva".equals(accion)) {
-            request.getRequestDispatcher("/views/cu12-registrar-proveedor.jsp").forward(request, response);
-            return;
-        }
-        if ("confirmarEliminar".equals(accion)) {
-            int id = parsearId(request.getParameter("id"));
-            Proveedor proveedor = proveedorService.buscar(id);
-            if (proveedor == null) {
-                response.sendRedirect(url(request, ""));
-                return;
-            }
-            request.setAttribute("proveedor", proveedor);
-            request.getRequestDispatcher("/views/cu25-confirmar-eliminar-proveedor.jsp").forward(request, response);
-            return;
-        }
         request.setAttribute("proveedores", proveedorService.listarProveedores());
-        request.getRequestDispatcher("/views/cu13-listado-proveedores.jsp").forward(request, response);
+        request.getRequestDispatcher("/views/listado-proveedores.jsp").forward(request, response);
     }
 
     @Override
@@ -70,10 +53,10 @@ public class ProveedorServlet extends HttpServlet {
                 request.getSession().setAttribute("mensaje", "Proveedor eliminado correctamente");
             }
         } catch (RuntimeException ex) {
+            // El alta y la confirmacion de eliminacion viven en modales in-page del
+            // listado: ante un error siempre se vuelve al listado, que muestra el
+            // mensaje via toast (igual que Restaurante y Plato).
             request.getSession().setAttribute("error", ex.getMessage());
-            if ("guardar".equals(accion)) {
-                destino = url(request, "accion=nueva");
-            }
         }
         response.sendRedirect(destino);
     }

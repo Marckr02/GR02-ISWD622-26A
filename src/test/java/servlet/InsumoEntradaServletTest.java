@@ -52,7 +52,7 @@ class InsumoEntradaServletTest {
 
     @Test
     void doGetListaInsumosYProveedoresYReenviaAlListado() throws Exception {
-        when(request.getRequestDispatcher("/views/cu3-insumos-entrada.jsp")).thenReturn(dispatcher);
+        when(request.getRequestDispatcher("/views/insumos-entrada.jsp")).thenReturn(dispatcher);
 
         servlet.doGet(request, response);
 

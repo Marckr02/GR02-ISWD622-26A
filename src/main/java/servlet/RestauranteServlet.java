@@ -5,16 +5,15 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import model.Restaurante;
 import service.RestauranteService;
 
 import java.io.IOException;
 
 /**
- * Controlador de restaurantes (F6.1). GET sin parametros (o con accion=nueva
- * / accion=editar, que ya no tienen una pagina propia: alta y edicion viven
- * en el modal de cu27) lista los restaurantes (cu27); GET con
- * accion=confirmarEliminar&id= muestra la confirmacion (cu29).
+ * Controlador de restaurantes (F6.1). GET siempre lista los restaurantes
+ * (listado-restaurantes.jsp) sin importar el valor de "accion": el alta, la
+ * edicion y la confirmacion de eliminacion viven en modales in-page de esa
+ * misma vista, no en paginas propias.
  * POST procesa "guardar", "actualizar" y "eliminar".
  */
 @WebServlet("/restaurantes")
@@ -25,19 +24,8 @@ public class RestauranteServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String accion = request.getParameter("accion");
-        if ("confirmarEliminar".equals(accion)) {
-            Restaurante restaurante = restauranteService.buscar(parsearId(request.getParameter("id")));
-            if (restaurante == null) {
-                response.sendRedirect(url(request, ""));
-                return;
-            }
-            request.setAttribute("restaurante", restaurante);
-            request.getRequestDispatcher("/views/cu29-confirmar-eliminar-restaurante.jsp").forward(request, response);
-            return;
-        }
         request.setAttribute("restaurantes", restauranteService.listarRestaurantes());
-        request.getRequestDispatcher("/views/cu27-listado-restaurantes.jsp").forward(request, response);
+        request.getRequestDispatcher("/views/listado-restaurantes.jsp").forward(request, response);
     }
 
     @Override
@@ -61,8 +49,9 @@ public class RestauranteServlet extends HttpServlet {
                 request.getSession().setAttribute("mensaje", "Restaurante eliminado correctamente");
             }
         } catch (RuntimeException ex) {
-            // El alta y la edicion viven en el modal de cu27 (con selector de color incluido):
-            // ante un error siempre se vuelve al listado, que muestra el mensaje via toast.
+            // El alta y la edicion viven en el modal del listado (con selector de color
+            // incluido): ante un error siempre se vuelve al listado, que muestra el
+            // mensaje via toast.
             request.getSession().setAttribute("error", ex.getMessage());
         }
         response.sendRedirect(destino);
