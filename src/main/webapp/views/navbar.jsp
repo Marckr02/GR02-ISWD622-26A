@@ -14,7 +14,7 @@
     List<String> visibles;
     switch (navRol) {
         case ADMIN_BODEGA:
-            visibles = Arrays.asList("tablero", "inventario", "monitoreo", "proveedores");
+            visibles = Arrays.asList("inventario", "monitoreo", "proveedores");
             break;
         case ADMINISTRADOR:
             visibles = Arrays.asList("restaurantes", "platos", "alertas", "metricas");
@@ -39,7 +39,7 @@
 
     // Pagina de aterrizaje de cada rol al cambiar de vista.
     String landingCocinero = "/pedidos?rol=COCINERO";
-    String landingBodega = "/pedidos?rol=ADMIN_BODEGA";
+    String landingBodega = "/insumos?rol=ADMIN_BODEGA";
     String landingAdmin = "/restaurantes?rol=ADMINISTRADOR";
 %>
 <header class="topbar">

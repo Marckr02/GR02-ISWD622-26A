@@ -913,6 +913,56 @@ body.tema-claro .filtro-fecha input[type="date"] { color-scheme: light; }
 }
 .proveedor-card__fila-icono { flex-shrink: 0; opacity: .8; font-size: 1.1rem; }
 
+/* ===================== Modo claro =====================
+   La cuadricula de platos (.plato-card) tenia fondo oscuro fijo (#2A2D34) y
+   texto blanco pensados solo para el tema oscuro: aca se convierten en
+   tarjeta blanca con sombra sutil (regla 1) y texto gris oscuro (regla 2). El
+   color de marca (punto junto al restaurante, boton "+N ingredientes", enlace
+   "ver receta completa") no se toca -- ya se usaba como acento, no como texto
+   de lectura principal (regla 3), asi que sigue igual en ambos temas. */
+body.tema-claro .plato-card {
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+body.tema-claro .plato-card:hover {
+    border-color: var(--muted);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .08);
+}
+body.tema-claro .plato-card__fila-superior { border-bottom-color: rgba(0, 0, 0, .08); }
+body.tema-claro .plato-card__nombre { color: var(--text); }
+body.tema-claro .plato-card__menu-btn:hover,
+body.tema-claro .plato-card__menu-btn[aria-expanded="true"] { background: rgba(0, 0, 0, .05); }
+body.tema-claro .plato-card__ing-nombre { color: var(--text); }
+body.tema-claro .plato-card__ing-cantidad { color: var(--muted); }
+body.tema-claro .plato-card__popover {
+    background: rgba(255, 255, 255, .94);
+    border-color: var(--border);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, .12);
+}
+body.tema-claro .plato-card__popover-cabecera { border-bottom-color: rgba(0, 0, 0, .08); }
+body.tema-claro .plato-card__popover-titulo { color: var(--text); }
+body.tema-claro .plato-card__popover-cerrar:hover { color: var(--text); background: rgba(0, 0, 0, .06); }
+body.tema-claro .plato-card__popover-fila { color: var(--text); }
+body.tema-claro .plato-card__popover-fila + .plato-card__popover-fila { border-top-color: rgba(0, 0, 0, .06); }
+body.tema-claro .plato-card__popover-cantidad { color: var(--muted); }
+
+/* Modal de confirmacion (resumen "Insumo: Cebolla", etc.): el valor iba en
+   blanco fijo. */
+body.tema-claro .modal__resumen-valor { color: var(--text); }
+
+/* Tarjetas de marca (restaurantes) y de proveedor: agregan la sombra de
+   elevacion de la regla 1 (antes solo tenian borde). */
+body.tema-claro .marca-card { box-shadow: var(--shadow); }
+body.tema-claro .proveedor-card { box-shadow: var(--shadow); }
+body.tema-claro .proveedor-card__fila { color: var(--text); }
+
+/* Ningun texto de lectura en color de marca, ni siquiera enlaces/badges
+   pequenos: el color de marca sigue de fondo/borde (permitido), pero el
+   texto encima pasa a gris. */
+body.tema-claro .plato-card__mas-btn { color: var(--text); }
+body.tema-claro .plato-card__toggle { color: var(--muted); }
+body.tema-claro .plato-card__toggle:hover { color: var(--text); }
+
 @media (max-width: 860px) {
     .receta__fila { grid-template-columns: 1fr; }
     .marca-card { align-items: flex-start; }

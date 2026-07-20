@@ -133,9 +133,38 @@ public class PedidoService {
         if (pedido == null) {
             throw new IllegalArgumentException("Pedido no encontrado");
         }
+        revertirStockSiVeniaDePreparacion(pedido);
         pedido.setEstado(pedido.getEstado().anterior());
         pedidoDao.actualizar(pedido);
         return pedido;
+    }
+
+    /**
+     * Devuelve al inventario los ingredientes de la receta del plato cuando un
+     * pedido retrocede de EN_PREPARACION a RECIBIDO (contraparte de HU30: el
+     * descuento solo ocurrio en ese mismo salto de estado). No hace nada si el
+     * pedido esta en otro estado o no tiene un plato asociado.
+     */
+    private void revertirStockSiVeniaDePreparacion(Pedido pedido) {
+        if (pedido.getEstado() != EstadoPedido.EN_PREPARACION || pedido.getPlatoId() <= 0) {
+            return;
+        }
+        Plato plato = platoDao.buscarPorId(pedido.getPlatoId());
+        if (plato == null) {
+            return;
+        }
+        for (IngredientePlato ingrediente : plato.getIngredientes()) {
+            Insumo insumo = insumoDao.buscarPorId(ingrediente.getInsumoId());
+            if (insumo == null) {
+                continue;
+            }
+            double cantidad = convertirALaUnidadDelInsumo(ingrediente, insumo);
+            insumo.setStock(Numeros.redondear(insumo.getStock() + cantidad));
+            insumoDao.actualizar(insumo);
+            if (alertaStockService != null) {
+                alertaStockService.evaluarYRegistrar(insumo);
+            }
+        }
     }
 
     /**

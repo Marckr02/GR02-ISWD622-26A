@@ -21,7 +21,8 @@ import java.util.Set;
  *     proveedores: unicamente ADMIN_BODEGA.
  *   - Consulta de disponibilidad del cocinero: COCINERO.
  *   - Restaurantes, platos y el historial de alertas: unicamente ADMINISTRADOR.
- * El tablero (/pedidos) queda abierto como pantalla de inicio.
+ * El tablero (/pedidos) queda abierto como pantalla de inicio para todos los
+ * roles excepto ADMIN_BODEGA, que ya no debe verlo.
  *
  * El rol vigente se toma del parametro "rol" o del atributo de sesion "rol"
  * (el sistema no implementa login real). Registrado en web.xml (no con
@@ -49,6 +50,11 @@ public class AuthFilter implements Filter {
 
     /** Determina si el rol puede acceder a la ruta protegida. */
     private boolean tienePermiso(String ruta, Rol rol) {
+        if ("/pedidos".equals(ruta)) {
+            // El tablero sigue siendo la pantalla de aterrizaje inicial (rol aun sin
+            // resolver en la primera visita), pero el admin de bodega ya no debe verlo.
+            return rol != Rol.ADMIN_BODEGA;
+        }
         if (rol == null) {
             return false;
         }
