@@ -133,21 +133,29 @@
     padding: .5rem .2rem;
 }
 
-/* ===================== Modo claro ===================== */
+/* ===================== Modo claro =====================
+   Contraste estructural: canvas gris perceptible (#F3F4F6) vs. tarjetas
+   blanco puro, separadas con borde sutil (--border) Y sombra definida (no
+   ambas cosas a la vez serian insuficientes -- por eso --shadow ahora es la
+   sombra de dos capas tipo "shadow-md", no una sombra casi imperceptible).
+   Texto principal casi negro (gris-900) para maxima legibilidad; --muted
+   queda para subtitulos/labels secundarios. Quien consuma var(--shadow) y
+   var(--border) (paneles, tarjetas, modales) hereda la definicion correcta
+   sin tocar nada mas. */
 body.tema-claro {
-    --bg: #f4f6fb;
+    --bg: #f3f4f6;
     --surface: #ffffff;
-    --surface-2: #eef1f7;
-    --border: #d6dce8;
-    --text: #16202c;
-    --muted: #5b6675;
-    --shadow: 0 6px 22px rgba(15, 23, 42, .12);
+    --surface-2: #f9fafb;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #4b5563;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, .1), 0 2px 4px -1px rgba(0, 0, 0, .06);
     --accent: #0d9488;
     --accent-ink: #ffffff;
     --accent-soft: rgba(13, 148, 136, .14);
-    background: radial-gradient(1200px 600px at 80% -10%, #e7edf7 0%, var(--bg) 55%);
+    background: var(--bg);
     color: var(--text);
 }
 body.tema-claro .topbar__logo { box-shadow: 0 0 0 4px var(--accent-soft); }
 body.tema-claro .vista__pill.is-on { box-shadow: 0 2px 10px rgba(13, 148, 136, .3); }
-body.tema-claro .toggle:hover { border-color: #b7c0d0; }
+body.tema-claro .toggle:hover { border-color: #c1c8d1; }

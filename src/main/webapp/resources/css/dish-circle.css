@@ -171,6 +171,24 @@
     color: var(--error);
 }
 
+/* ===================== Modo claro =====================
+   El nombre del plato era texto blanco fijo (ilegible sobre el degradado
+   claro que toma .dish-circle via --surface-2). El nombre de la marca ya no
+   se lee en su color vibrante (regla: nunca texto de lectura sobre fondo
+   claro) -- ese color de marca queda solo en el filete/anillo, que ya era
+   sutil (1.5px, via box-shadow) y no necesita cambios. */
+body.tema-claro .dish-circle__nombre { color: var(--text); }
+body.tema-claro .dish-circle__marca { color: var(--muted); }
+/* El bisel ceramico (highlight blanco + sombra fuerte) estaba calibrado para
+   flotar sobre fondo oscuro: en claro pasa a un borde real + sombra definida
+   (regla 1), igual que el resto de tarjetas. */
+body.tema-claro .dish-circle {
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+body.tema-claro .dish-circle:hover { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, .1), 0 4px 6px -2px rgba(0, 0, 0, .05); }
+body.tema-claro .dish-circle::before { box-shadow: 0 0 0 1.5px var(--marca, var(--border)); }
+
 @media (prefers-reduced-motion: reduce) {
     .dish-circle { transition: none; }
 }

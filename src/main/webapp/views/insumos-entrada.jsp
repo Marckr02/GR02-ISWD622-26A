@@ -25,7 +25,11 @@
         if ("unidades".equals(unidad)) {
             return String.valueOf(Math.round(valor));
         }
-        return String.format(java.util.Locale.US, "%.2f", valor);
+        String texto = String.format(java.util.Locale.US, "%.2f", valor);
+        if (texto.contains(".")) {
+            texto = texto.replaceAll("0+$", "").replaceAll("\\.$", "");
+        }
+        return texto;
     }
 
     /** Escapa comillas dobles para poder incrustar el valor dentro de un atributo HTML. */
@@ -377,6 +381,7 @@
 </div>
 
 <script src="<%= ctx %>/resources/js/toast.js"></script>
+<script src="<%= ctx %>/resources/js/contacto-proveedor.js"></script>
 <script src="<%= ctx %>/resources/js/inventario.js"></script>
 </body>
 </html>
