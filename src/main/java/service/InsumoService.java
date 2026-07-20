@@ -1,6 +1,7 @@
 package service;
 
 import dao.InsumoDao;
+import dao.PlatoDao;
 import model.DetalleEntradaInsumo;
 import model.Insumo;
 
@@ -20,19 +21,26 @@ public class InsumoService {
     private final InsumoDao insumoDao;
     private final ValidadorEntradaInsumo validador;
     private final AlertaStockService alertaStockService;
+    private final PlatoDao platoDao;
 
     public InsumoService() {
-        this(new InsumoDao(), new ValidadorEntradaInsumo(), new AlertaStockService());
+        this(new InsumoDao(), new ValidadorEntradaInsumo(), new AlertaStockService(), new PlatoDao());
     }
 
     public InsumoService(InsumoDao insumoDao, ValidadorEntradaInsumo validador) {
-        this(insumoDao, validador, new AlertaStockService());
+        this(insumoDao, validador, new AlertaStockService(), new PlatoDao());
     }
 
     public InsumoService(InsumoDao insumoDao, ValidadorEntradaInsumo validador, AlertaStockService alertaStockService) {
+        this(insumoDao, validador, alertaStockService, new PlatoDao());
+    }
+
+    public InsumoService(InsumoDao insumoDao, ValidadorEntradaInsumo validador,
+                          AlertaStockService alertaStockService, PlatoDao platoDao) {
         this.insumoDao = insumoDao;
         this.validador = validador;
         this.alertaStockService = alertaStockService;
+        this.platoDao = platoDao;
     }
 
     public List<Insumo> listarInsumos() {
@@ -271,11 +279,17 @@ public class InsumoService {
     /**
      * Elimina definitivamente un insumo del inventario.
      * @throws IllegalArgumentException si el insumo no existe.
+     * @throws IllegalStateException    si el insumo pertenece a la receta de algun plato.
      */
     public void eliminarInsumo(int insumoId) {
         Insumo insumo = insumoDao.buscarPorId(insumoId);
         if (insumo == null) {
             throw new IllegalArgumentException("El insumo indicado no existe en el sistema");
+        }
+        if (platoDao.existePlatoConIngrediente(insumoId)) {
+            throw new IllegalStateException(
+                    "No se puede eliminar este insumo porque pertenece a la receta de un plato. "
+                            + "Quitelo de los platos antes de eliminarlo");
         }
         insumoDao.eliminar(insumoId);
     }

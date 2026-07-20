@@ -78,7 +78,7 @@ body {
     border-radius: var(--radius);
     padding: 1rem;
     min-height: 200px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, .2);
+    box-shadow: var(--shadow);
 }
 .col--RECIBIDO { --accent: var(--recibido); }
 .col--EN_PREPARACION { --accent: var(--preparacion); }
@@ -368,6 +368,31 @@ body {
 
 @keyframes aparece { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes latido { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+
+/* ===================== Modo claro: tickets del tablero =====================
+   El cuerpo del ticket (#232A35) y su texto blanco eran fijos, pensados solo
+   para el pase de cocina oscuro: en modo claro se convierten en tarjeta clara
+   con texto gris oscuro. El membrete de marca sigue solido (badge, permitido)
+   porque los colores de marca no cambian; solo se ajustan los botones que
+   flotan sobre el cuerpo, ahora claro, para que sigan siendo legibles. */
+body.tema-claro .ticket-card__body { background: var(--surface-2); }
+body.tema-claro .ticket-card__plato { color: var(--text); }
+body.tema-claro .ticket-card__id { color: var(--muted); }
+body.tema-claro .btn-icon {
+    color: var(--accent, var(--text));
+    background: color-mix(in srgb, var(--accent) 14%, white);
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    box-shadow: none;
+}
+body.tema-claro .btn-icon:focus-visible { outline-color: var(--text); }
+body.tema-claro .btn-icon--retro {
+    background: rgba(0, 0, 0, .05);
+    border-color: rgba(0, 0, 0, .18);
+    color: var(--text);
+    box-shadow: none;
+}
+body.tema-claro .btn-icon--retro:hover { border-color: var(--text); background: rgba(0, 0, 0, .09); }
+body.tema-claro .aviso--error { color: #b91c1c; }
 
 @media (max-width: 900px) {
     .tablero { grid-template-columns: 1fr 1fr; }

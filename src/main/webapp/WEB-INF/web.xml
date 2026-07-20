@@ -30,6 +30,7 @@
     </filter>
     <filter-mapping>
         <filter-name>AuthFilter</filter-name>
+        <url-pattern>/pedidos</url-pattern>
         <url-pattern>/insumos</url-pattern>
         <url-pattern>/monitoreo</url-pattern>
         <url-pattern>/disponibilidad</url-pattern>

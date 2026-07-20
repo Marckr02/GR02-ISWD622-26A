@@ -180,6 +180,7 @@
 </div>
 
 <script src="<%= ctx %>/resources/js/menu-filtros.js"></script>
+<script src="<%= ctx %>/resources/js/contacto-proveedor.js"></script>
 <script src="<%= ctx %>/resources/js/monitoreo.js"></script>
 </body>
 </html>

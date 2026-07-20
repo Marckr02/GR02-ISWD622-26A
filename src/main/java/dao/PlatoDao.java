@@ -144,6 +144,21 @@ public class PlatoDao {
         }
     }
 
+    /** True si algun plato usa el insumo indicado en su receta (bloquea la eliminacion del insumo). */
+    public boolean existePlatoConIngrediente(int insumoId) {
+        String sql = "SELECT COUNT(*) FROM plato_ingredientes WHERE insumo_id = ?";
+        try (Connection con = ConexionBD.obtenerConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, insumoId);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException ex) {
+            throw new IllegalStateException("No se pudo verificar el uso del insumo en los platos", ex);
+        }
+    }
+
     private void insertarIngredientes(Connection con, int platoId, List<IngredientePlato> ingredientes) throws SQLException {
         if (ingredientes == null || ingredientes.isEmpty()) {
             return;

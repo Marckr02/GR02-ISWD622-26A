@@ -302,9 +302,104 @@ body {
 .btn--ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
 
 #contacto-proveedor-cuerpo { margin: 0 0 1rem; font-size: .9rem; }
-#contacto-proveedor-cuerpo .contacto-nombre { font-weight: 700; margin: 0 0 .3rem; }
 #contacto-proveedor-cuerpo p { margin: .2rem 0; }
 #contacto-proveedor-cuerpo .hint { margin: 0; color: var(--muted); }
+
+/* Titulo del modal ("Contactar proveedor"): encabezado sutil -- el nombre del
+   proveedor de abajo es quien debe protagonizar el panel. */
+#modal-contacto-titulo {
+    margin: 0;
+    color: var(--muted);
+    font-size: .78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+/* Nombre del proveedor: el verdadero protagonista del panel de contacto rapido. */
+#contacto-proveedor-cuerpo .contacto-nombre {
+    margin: .3rem 0 1rem;
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -.01em;
+}
+
+/* Tarjetas de contacto de un solo clic (tel: / mailto: / wa.me): fondo sutil,
+   icono a la izquierda, etiqueta chica arriba del dato destacado abajo. */
+.contacto-lista {
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+}
+.contacto-card {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    width: 100%;
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: .65rem .8rem;
+    color: inherit;
+    text-decoration: none;
+    transition: background .15s, border-color .15s;
+}
+.contacto-card:hover,
+.contacto-card:focus-visible {
+    background: rgba(255, 255, 255, .09);
+    border-color: var(--muted);
+}
+.contacto-card__icono {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, .06);
+    color: var(--text);
+}
+.contacto-card__icono svg { width: 18px; height: 18px; }
+.contacto-card__texto {
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+    min-width: 0;
+}
+.contacto-card__etiqueta {
+    color: var(--muted);
+    font-size: .72rem;
+    font-weight: 600;
+}
+.contacto-card__valor {
+    color: #fff;
+    font-size: .95rem;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+/* WhatsApp: unica tarjeta con acento de color (verde de marca), para
+   distinguirla como el canal rapido preferido de contacto con proveedores. */
+.contacto-card--whatsapp .contacto-card__icono { background: rgba(37, 211, 102, .16); color: #25D366; }
+.contacto-card--whatsapp:hover,
+.contacto-card--whatsapp:focus-visible { border-color: rgba(37, 211, 102, .5); }
+
+/* Modo claro: el popover de contacto usaba tonos blancos translucidos
+   (pensados para flotar sobre fondo oscuro), invisibles sobre el modal claro. */
+body.tema-claro #contacto-proveedor-cuerpo .contacto-nombre { color: var(--text); }
+body.tema-claro .contacto-card { background: var(--surface-2); }
+body.tema-claro .contacto-card:hover,
+body.tema-claro .contacto-card:focus-visible { background: var(--border); }
+body.tema-claro .contacto-card__icono { background: var(--surface); }
+body.tema-claro .contacto-card__valor { color: var(--text); }
+
+/* El stock en rojo/amarillo de la tabla tampoco se lee en el color del
+   estado en claro (regla 4): el color queda solo en el punto/pildora de
+   filtro, el numero se queda en --text. */
+body.tema-claro .critico--rojo,
+body.tema-claro .critico--amarillo { color: var(--text); }
 
 @media (max-width: 980px) {
     .dashboard { grid-template-columns: 1fr; }

@@ -10,13 +10,13 @@ target/
 *.trace.db
 
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
+.idea/
 *.iws
 *.iml
 *.ipr
+
+### SmartTomcat (config local del Tomcat embebido por el plugin de IntelliJ) ###
+.smarttomcat/
 
 ### Eclipse ###
 .apt_generated
